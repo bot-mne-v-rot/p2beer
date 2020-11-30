@@ -42,7 +42,7 @@ tasks.shadowJar {
     mergeServiceFiles()
 
     manifest {
-        attributes["Main-Class"] = "ru.emkn.kotlin.MainKt"
+        attributes["Main-Class"] = "ru.emkn.p2beer.MainKt"
     }
 }
 
