@@ -17,6 +17,7 @@ dependencies {
     val junitVersion = "5.6.2"
 
     implementation(kotlin("stdlib"))
+    implementation("org.bouncycastle:bcprov-jdk15to18:1.67")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
@@ -26,6 +27,7 @@ dependencies {
 tasks.withType(KotlinCompile::class.java) {
     kotlinOptions {
         jvmTarget = "1.8"
+        freeCompilerArgs = freeCompilerArgs + "-Xopt-in=kotlin.ExperimentalUnsignedTypes"
     }
 }
 
