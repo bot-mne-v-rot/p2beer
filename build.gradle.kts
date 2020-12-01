@@ -11,6 +11,7 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    jcenter()
 }
 
 dependencies {
@@ -18,6 +19,7 @@ dependencies {
 
     implementation(kotlin("stdlib"))
     implementation("org.bouncycastle:bcprov-jdk15to18:1.67")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")

@@ -1,29 +1,31 @@
 package ru.emkn.p2beer.p2p.network
 
-typealias Buffer = UByteArray
+typealias Buffer = ByteArray
 
 /**
- * A base abstraction for the protocol.
+ * One of the base abstractions for the protocol.
  * Stream nodes form a tree.
  * A stream is opened per each connection and
  * extended with decorator streams in a chain
  * of extensions.
+ *
+ * @see ExtensionNode
  */
 interface StreamNode {
-    var parent : StreamNode?
+    var parent: StreamNode?
 
     /**
      * The message should be sent via transport to the remote node.
      * Invocation flow goes from children to parent.
      */
-    fun send(message : Buffer)
+    fun send(message: Buffer)
 
     /**
      * The message was received by the transport and should be propagated
      * to the children.
      * Invocation flow goes from parent to children.
      */
-    fun receive(message : Buffer)
+    fun receive(message: Buffer)
 
     /**
      * The method is firstly called on the root node and only when the
@@ -40,7 +42,7 @@ interface StreamNode {
      * remote instance of the stream node. It can be implemented via
      * State pattern, for instance.
      */
-    fun performHandshake()
+    suspend fun performHandshake()
 
     /**
      * The same as [performHandshake] but in reverse order.
@@ -48,12 +50,12 @@ interface StreamNode {
      * but the node should firstly let the children nodes to
      * close and only after that close itself.
      */
-    fun performClosure()
+    suspend fun performClosure()
 
     /**
      * The method just to pass the node's wish to close the connection.
      */
-    fun close() {
+    suspend fun close() {
         if (parent == null)
             performClosure()
         parent?.close()
@@ -63,13 +65,21 @@ interface StreamNode {
      * True if the current stream node was successfully opened
      * regardless the invocation side.
      */
-    val opened : Boolean
+    val opened: Boolean
 
     /**
      * True if the current stream node was successfully closed
      * regardless the invocation side.
      */
-    val closed : Boolean
+    val closed: Boolean
+}
+
+fun StreamNode.receiveString(message: String) {
+    receive(message.encodeToByteArray())
+}
+
+fun StreamNode.sendString(message: String) {
+    send(message.encodeToByteArray())
 }
 
 /**
@@ -78,18 +88,27 @@ interface StreamNode {
 open class StreamLeafNode : StreamNode {
     override var parent: StreamNode? = null
 
-    override var opened: Boolean = false
-         protected set
+    /**
+     * Some nodes can state that they have no handshake process
+     * and thus are opened by default. We can't simply have the
+     * variable set true during [performHandshake] because
+     * absence of the handshake messages results in the non-opened
+     * remote node.
+     */
+    override var opened: Boolean = true
+        protected set
 
     override var closed: Boolean = false
         protected set
 
-    override fun performHandshake() {
+    override suspend fun performHandshake() {
         // Handshake
-        opened = true
+
+        // Normally:
+        // opened = true
     }
 
-    override fun performClosure() {
+    override suspend fun performClosure() {
         // Closure
         closed = true
     }
@@ -116,13 +135,15 @@ open class StreamListNode : StreamLeafNode() {
             field = value
         }
 
-    override fun performHandshake() {
+    override suspend fun performHandshake() {
         // Handshake
-        opened = true
+
+        // Normally:
+        // opened = true
         child?.performHandshake()
     }
 
-    override fun performClosure() {
+    override suspend fun performClosure() {
         child?.performClosure()
         // Closure
         closed = true
@@ -132,4 +153,9 @@ open class StreamListNode : StreamLeafNode() {
         // Message processing
         parent?.receive(message)
     }
+}
+
+class HandshakeFailed : Exception {
+    constructor() : super("Handshake failed.")
+    constructor(message: String) : super("Handshake failed due to:\n $message")
 }
