@@ -30,7 +30,7 @@ interface ExtensionNode {
      * Called by the [TransportManager] when the latter is extended.
      * Use it with [backgroundScope] to create background activities.
      */
-    suspend fun init() = Unit
+    suspend fun init()
 
     /**
      * Can only extend successors of [StreamListNode].
@@ -56,6 +56,8 @@ open class ExtensionLeafNode : ExtensionNode {
 
     override var parent: ExtensionNode? = null
 
+    override suspend fun init() = Unit
+
     override suspend fun extendStream(node: StreamListNode) {
         // Example implementation.
         // Can be overridden.
@@ -76,6 +78,10 @@ open class ExtensionListNode : ExtensionLeafNode() {
             value?.parent = this
             field = value
         }
+
+    override suspend fun init() {
+        child?.init()
+    }
 
     override suspend fun extendStream(node: StreamListNode) {
         // Example implementation.

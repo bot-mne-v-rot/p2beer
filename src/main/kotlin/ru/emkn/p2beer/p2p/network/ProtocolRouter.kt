@@ -32,6 +32,8 @@ abstract class ProtocolRouterExtension : ExtensionLeafNode() {
      */
     abstract val protocols: MutableMap<ProtocolDescriptor, ExtensionNode>
 
+    abstract override suspend fun init()
+
     abstract override suspend fun extendStream(node: StreamListNode)
 }
 

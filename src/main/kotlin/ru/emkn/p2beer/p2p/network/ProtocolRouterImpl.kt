@@ -10,6 +10,12 @@ import com.google.protobuf.ByteString
 internal class ProtocolRouterExtensionImpl : ProtocolRouterExtension() {
     override val protocols = mutableMapOf<ProtocolDescriptor, ExtensionNode>()
 
+    override suspend fun init() = coroutineScope {
+        protocols.values.forEach { extension ->
+            launch { extension.init() }
+        }
+    }
+
     override suspend fun extendStream(node: StreamListNode) = coroutineScope {
         val routerStream = ProtocolRouterStreamImpl(protocols.keys)
         node.child = routerStream
