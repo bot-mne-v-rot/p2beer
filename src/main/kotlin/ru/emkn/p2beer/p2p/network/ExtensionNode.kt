@@ -38,7 +38,7 @@ interface ExtensionNode {
      * dummy streams should be passed to the successive
      * nodes.
      *
-     * @see ProtocolRouter
+     * @see ProtocolRouterExtension
      */
     suspend fun extendStream(node: StreamListNode)
 }
