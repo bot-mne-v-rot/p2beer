@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package p2p.network;
+
+option java_package = "ru.emkn.p2beer.p2p.network";
+option java_outer_classname = "ProtocolRouterProtos";
+
+message ProtocolVersion {
+  uint32 major = 1;
+  uint32 minor = 2;
+  uint32 revision = 3;
+}
+
+message ProtocolDescriptor {
+  string name = 1;
+  ProtocolVersion version = 2;
+}
+
+message ProtocolMessage {
+  ProtocolDescriptor protoDescriptor = 1;
+  bytes message = 2;
+}
