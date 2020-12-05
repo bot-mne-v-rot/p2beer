@@ -115,6 +115,9 @@ data class NodeId(val data: UByteArray = UByteArray(NodeId_sizeInBytes)) {
             NodeId(Random.nextUBytes(NodeId_sizeInBytes))
     }
 
+    /**
+     * Automatically generated method.
+     */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -126,6 +129,9 @@ data class NodeId(val data: UByteArray = UByteArray(NodeId_sizeInBytes)) {
         return true
     }
 
+    /**
+     * Automatically generated method.
+     */
     override fun hashCode(): Int {
         return data.contentHashCode()
     }

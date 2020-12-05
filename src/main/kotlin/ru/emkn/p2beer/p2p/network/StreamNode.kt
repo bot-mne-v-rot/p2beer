@@ -17,15 +17,19 @@ interface StreamNode {
     /**
      * The message should be sent via transport to the remote node.
      * Invocation flow goes from children to parent.
+     *
+     * @throws IllegalStateException
      */
-    fun send(message: Buffer)
+    suspend fun send(message: Buffer)
 
     /**
      * The message was received by the transport and should be propagated
      * to the children.
      * Invocation flow goes from parent to children.
+     *
+     * @throws IllegalStateException
      */
-    fun receive(message: Buffer)
+    suspend fun receive(message: Buffer)
 
     /**
      * The method is firstly called on the root node and only when the
@@ -41,6 +45,9 @@ interface StreamNode {
      * only after full completion that may require communication with the
      * remote instance of the stream node. It can be implemented via
      * State pattern, for instance.
+     *
+     * @throws HandshakeFailedException
+     * @throws IllegalStateException
      */
     suspend fun performHandshake()
 
@@ -49,6 +56,9 @@ interface StreamNode {
      * It's is still firstly called on the root node
      * but the node should firstly let the children nodes to
      * close and only after that close itself.
+     *
+     * @throws ClosureFailedException
+     * @throws IllegalStateException
      */
     suspend fun performClosure()
 
@@ -64,21 +74,18 @@ interface StreamNode {
     /**
      * True if the current stream node was successfully opened
      * regardless the invocation side.
+     *
+     * False if the current stream node was successfully closed
+     * or wasn't yet initialized.
      */
     val opened: Boolean
-
-    /**
-     * True if the current stream node was successfully closed
-     * regardless the invocation side.
-     */
-    val closed: Boolean
 }
 
-fun StreamNode.receiveString(message: String) {
+suspend fun StreamNode.receiveString(message: String) {
     receive(message.encodeToByteArray())
 }
 
-fun StreamNode.sendString(message: String) {
+suspend fun StreamNode.sendString(message: String) {
     send(message.encodeToByteArray())
 }
 
@@ -98,9 +105,6 @@ open class StreamLeafNode : StreamNode {
     override var opened: Boolean = true
         protected set
 
-    override var closed: Boolean = false
-        protected set
-
     override suspend fun performHandshake() {
         // Handshake
 
@@ -110,15 +114,15 @@ open class StreamLeafNode : StreamNode {
 
     override suspend fun performClosure() {
         // Closure
-        closed = true
+        opened = false
     }
 
-    override fun send(message: Buffer) {
+    override suspend fun send(message: Buffer) {
         // Message processing
         parent?.send(message)
     }
 
-    override fun receive(message: Buffer) {
+    override suspend fun receive(message: Buffer) {
         // Message processing
     }
 }
@@ -129,7 +133,7 @@ open class StreamLeafNode : StreamNode {
 open class StreamListNode : StreamLeafNode() {
 
     // Automatically inserts parent
-    var child: StreamNode? = null
+    open var child: StreamNode? = null
         set(value) {
             value?.parent = this
             field = value
@@ -146,16 +150,21 @@ open class StreamListNode : StreamLeafNode() {
     override suspend fun performClosure() {
         child?.performClosure()
         // Closure
-        closed = true
+        opened = false
     }
 
-    override fun receive(message: Buffer) {
+    override suspend fun receive(message: Buffer) {
         // Message processing
-        parent?.receive(message)
+        child?.receive(message)
     }
 }
 
-class HandshakeFailed : Exception {
+class HandshakeFailedException : Exception {
     constructor() : super("Handshake failed.")
     constructor(message: String) : super("Handshake failed due to:\n $message")
+}
+
+class ClosureFailedException : Exception {
+    constructor() : super("Closure failed.")
+    constructor(message: String) : super("Closure failed due to:\n $message")
 }
