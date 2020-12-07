@@ -1,43 +1,33 @@
 package ru.emkn.p2beer
-    import java.io.OutputStream
-            import java.net.InetSocketAddress
-            import java.net.ServerSocket
-            import java.net.Socket
-            import java.net.SocketAddress
-            import java.nio.charset.Charset
-            import java.util.*
-            import kotlin.concurrent.thread
-            import java.util.logging.Logger
-            import kotlin.system.exitProcess
+import java.net.Socket
+import java.util.logging.Logger
+import kotlinx.coroutines.*
 
-
-    fun main() {
-        val host = "35.217.31.232"
-        val port = 5005
-        val sa = Socket(host, port)
-        sa.reuseAddress = true
-
-        val privAddr = Pair(sa.localAddress.hostAddress, sa.localPort)
-        println("${privAddr.first}:${privAddr.second}")
-        val writer = sa.getOutputStream()
-
-    sendMsg(sa, addrToMsg(privAddr), writer)
-
-    var data = receiveMsg(sa)
-
+fun main() = runBlocking {
+    val host = "35.217.31.232"
+    val port = 5005
+    val socket = Socket(host, port)
+    socket.reuseAddress = true
     val logger = Logger.getLogger("client")
 
-    logger.info("client ${privAddr.first}:${privAddr.second} - received data: ${data}")
-    val pubAddr = msgToAddr(data)
-    //println("${pubAddr.first}:${pubAddr.second}")
+    val privateAddress = Pair(socket.localAddress.hostAddress, socket.localPort)
 
-    sendMsg(sa, addrToMsg(pubAddr), writer)
+    sendMessage(socket, addressToMessage(privateAddress))
 
-    data = receiveMsg(sa)
-    val clientPubAddr = msgToAddr(data.split("|")[0])
-    val clientPrivAddr = msgToAddr(data.split("|")[1])
+    var receivedData = receiveMessage(socket)
+    logger.info("client ${addressToMessage(privateAddress)} - received data: $receivedData")
+    val publicAddress = messageToAddress(receivedData)
+
+    sendMessage(socket, addressToMessage(publicAddress))
+
+    receivedData = receiveMessage(socket)
+    val clientPublicAddress = messageToAddress(receivedData.split("|")[0])
+    val clientPrivateAddress = messageToAddress(receivedData.split("|")[1])
     logger.info(
-        "client public is ${pubAddr.first}:${pubAddr.second} and private is ${privAddr.first}:${privAddr.second}, " +
-                "peer public is ${clientPubAddr.first}:${clientPubAddr.second} private is ${clientPrivAddr.first}:${clientPrivAddr.second}"
+        "client public is ${publicAddress.first}:${publicAddress.second} and private is ${privateAddress.first}:${privateAddress.second}, " +
+                "peer public is ${clientPublicAddress.first}:${clientPublicAddress.second} private is ${clientPrivateAddress.first}:${clientPrivateAddress.second}"
     )
+
+    // try to connect from our privateAddress to clientPublicAddress...
+
 }

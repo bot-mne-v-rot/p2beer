@@ -1,31 +1,23 @@
 package ru.emkn.p2beer
-import java.io.OutputStream
-import java.io.PrintWriter
-import java.net.InetAddress
-import java.net.InetSocketAddress
 import java.net.Socket
-import java.net.ServerSocket
-import java.net.SocketAddress
-import java.nio.ByteBuffer
+import java.util.*
 
-fun addrToMsg(addr: Pair<String, Int>) = addr.first + ":" + addr.second.toString()
+data class Client(val socket: Socket,
+                  val publicAddress: Pair<String, Int>,
+                  val privateAddress: Pair<String, Int>)
 
-fun msgToAddr(msg: String): Pair<String, Int> {
-    val parts = msg.split(":")
+fun addressToMessage(address: Pair<String, Int>): String = address.first + ":" + address.second.toString()
+
+fun messageToAddress(message: String): Pair<String, Int> {
+    val parts = message.split(":")
     return Pair(parts[0], parts[1].toInt())
 }
 
-fun sendMsg(sock: Socket, msg: String, writer: OutputStream) {
-    println(msg)
-    val ar = ByteBuffer.allocate(4).putInt(msg.length).array() + msg.toByteArray()
-    writer.write(ar)
-    //println(ar.joinToString(" "))
-
-    //sock.getOutputStream().write(ar)
+fun sendMessage(socket: Socket, message: String) {
+    socket.getOutputStream().write((message + '\n').toByteArray())
+    socket.getOutputStream().flush()
 }
 
-fun receiveMsg(sock: Socket): String {
-    val x = sock.getInputStream().readBytes()
-    val z = x.copyOfRange(4, x.size)
-    return z.decodeToString()
-}
+fun receiveMessage(socket: Socket): String = Scanner(socket.getInputStream()).nextLine()
+
+fun createPeerMessage(client: Client): String = addressToMessage(client.publicAddress) + "|" + addressToMessage(client.privateAddress)
