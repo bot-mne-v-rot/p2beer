@@ -1,6 +1,7 @@
 package ru.emkn.p2beer.p2p.network
 
-typealias Buffer = ByteArray
+import ru.emkn.p2beer.p2p.NodeId
+import ru.emkn.p2beer.p2p.Buffer
 
 /**
  * One of the base abstractions for the protocol.
@@ -79,6 +80,42 @@ interface StreamNode {
      * or wasn't yet initialized.
      */
     val opened: Boolean
+
+    /**
+     * Transport descriptor inherited from the [Transport]
+     *
+     * DON'T ACCESS BEFORE PARENT IS ATTACHED
+     */
+    val transport: TransportDescriptor
+
+    /**
+     * Our node id. It's one for the whole application
+     * but is put here for convenience.
+     *
+     * DON'T ACCESS BEFORE PARENT IS ATTACHED
+     */
+    val thisNodeId: NodeId
+
+    /**
+     * Remote node's NodeId associated with the Stream
+     *
+     * DON'T ACCESS BEFORE PARENT IS ATTACHED
+     */
+    val remoteNodeId: NodeId
+
+    /**
+     * Endpoint from which we communicate
+     *
+     * DON'T ACCESS BEFORE PARENT IS ATTACHED
+     */
+    val thisEndpoint: Endpoint
+
+    /**
+     * Endpoint to which we communicate
+     *
+     * DON'T ACCESS BEFORE PARENT IS ATTACHED
+     */
+    val remoteEndpoint: Endpoint
 }
 
 suspend fun StreamNode.receiveString(message: String) {
@@ -124,6 +161,26 @@ open class StreamLeafNode : StreamNode {
 
     override suspend fun receive(message: Buffer) {
         // Message processing
+    }
+
+    override val thisNodeId: NodeId by lazy {
+        parent!!.thisNodeId
+    }
+
+    override val remoteNodeId: NodeId by lazy {
+        parent!!.remoteNodeId
+    }
+
+    override val transport: TransportDescriptor by lazy {
+        parent!!.transport
+    }
+
+    override val thisEndpoint: Endpoint by lazy {
+        parent!!.thisEndpoint
+    }
+
+    override val remoteEndpoint: Endpoint by lazy {
+        parent!!.remoteEndpoint
     }
 }
 

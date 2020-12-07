@@ -7,6 +7,8 @@ import kotlinx.coroutines.*
 
 import ru.emkn.p2beer.p2p.network.*
 
+import ru.emkn.p2beer.p2p.Buffer
+
 class ProtocolRouterTests {
     companion object {
         @StreamListNodeFactory

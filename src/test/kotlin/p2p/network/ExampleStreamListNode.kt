@@ -1,5 +1,7 @@
 package p2p.network
 
+import ru.emkn.p2beer.p2p.Buffer
+
 import java.lang.IllegalStateException
 import kotlin.coroutines.*
 import kotlinx.coroutines.*
@@ -30,11 +32,13 @@ private class ExampleStreamListNode : StreamListNode() {
             send(closureRespMsg)
             opened = false
         } else if (!opened && isHandshakeResp && handshakeContinuation != null) {
-            handshakeContinuation?.resume(Unit)
+            val cont = handshakeContinuation
             handshakeContinuation = null
+            cont?.resume(Unit)
         } else if (opened && isClosureResp && closureContinuation != null) {
-            closureContinuation?.resume(Unit)
+            val cont = closureContinuation
             closureContinuation = null
+            cont?.resume(Unit)
         } else if (!opened || isHandshake || isClosure || isHandshakeResp || isClosureResp) {
             handshakeContinuation?.resumeWithException(HandshakeFailedException())
             closureContinuation?.resumeWithException(ClosureFailedException())
@@ -84,6 +88,7 @@ class ExampleStreamListNodeTests() {
     companion object {
         @StreamListNodeFactory
         @TestHandshakeAndClosure
+        @TestSendAndReceive
         @JvmStatic
         fun factoryForExample() : StreamListNode =
             ExampleStreamListNode()

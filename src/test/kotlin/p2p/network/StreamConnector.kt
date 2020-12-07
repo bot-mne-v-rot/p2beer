@@ -5,6 +5,7 @@ import io.mockk.*
 import kotlinx.coroutines.*
 
 import ru.emkn.p2beer.p2p.network.*
+import ru.emkn.p2beer.p2p.Buffer
 
 internal class PerStreamConnector(private val biConnector: StreamConnector) : StreamListNode() {
     override suspend fun send(message: Buffer) {

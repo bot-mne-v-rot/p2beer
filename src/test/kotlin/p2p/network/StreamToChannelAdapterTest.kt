@@ -25,7 +25,7 @@ class StreamToChannelAdapterTest {
         val message = "A".toByteArray()
 
         adapter.sendChannel.send(message)
-        delay(100)
+        yield()
 
         coVerify { streamMock.send(message) }
         job.cancel()

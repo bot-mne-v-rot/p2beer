@@ -2,6 +2,8 @@ package ru.emkn.p2beer.p2p.network
 
 import kotlinx.coroutines.*
 
+import ru.emkn.p2beer.p2p.Buffer
+
 import ru.emkn.p2beer.p2p.network.ProtocolRouterProtos.ProtocolMessage as ProtocolMessageProto
 import ru.emkn.p2beer.p2p.network.ProtocolRouterProtos.ProtocolVersion as ProtocolVersionProto
 import ru.emkn.p2beer.p2p.network.ProtocolRouterProtos.ProtocolDescriptor as ProtocolDescriptorProto

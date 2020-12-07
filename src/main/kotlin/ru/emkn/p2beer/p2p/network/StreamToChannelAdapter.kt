@@ -1,5 +1,7 @@
 package ru.emkn.p2beer.p2p.network
 
+import ru.emkn.p2beer.p2p.Buffer
+
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 

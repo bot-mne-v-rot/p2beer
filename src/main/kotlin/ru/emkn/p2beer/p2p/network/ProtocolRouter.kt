@@ -1,5 +1,8 @@
 package ru.emkn.p2beer.p2p.network
 
+import ru.emkn.p2beer.p2p.Name
+import ru.emkn.p2beer.p2p.Buffer
+
 data class ProtocolVersion(val major: UShort, val minor: UShort, val revision: UShort) {
     operator fun compareTo(other: ProtocolVersion): Int {
         return when {
@@ -11,9 +14,9 @@ data class ProtocolVersion(val major: UShort, val minor: UShort, val revision: U
 }
 
 data class ProtocolDescriptor(
-    val name: String,
+    val name: Name,
     val version: ProtocolVersion,
-    var leastSupportedVersion: ProtocolVersion
+    val leastSupportedVersion: ProtocolVersion
 ) {
 
     constructor(name: String, version: ProtocolVersion) : this(name, version, version)
