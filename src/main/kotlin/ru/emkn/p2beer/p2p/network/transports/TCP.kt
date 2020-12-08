@@ -67,13 +67,23 @@ private class TCPStream(private val socket: TCPSocket, override val thisNodeId: 
     private val reader = MessageReader(socket)
     private val writer = MessageWriter(socket)
 
+    var backgroundJob: Job? = null
+
     suspend fun run() = coroutineScope {
-        launch { writer.run() }
-        launch {
-            while (true) {
-                val msg = reader.read()
-                receive(msg.toByteArray())
-            }
+        try {
+            launch { writer.run() }
+            launch { runReceiveLoop() }
+        } catch (e: ClosedChannelException) {
+            // It's absolutely ok.
+            // We catch it here to make all of the
+            // endless loops stop.
+        }
+    }
+
+    private suspend fun runReceiveLoop() = coroutineScope {
+        while (true) {
+            val msg = reader.read()
+            launch { receive(msg.toByteArray()) } // Async launch not to block the receive process
         }
     }
 
@@ -82,16 +92,22 @@ private class TCPStream(private val socket: TCPSocket, override val thisNodeId: 
     }
 
     override suspend fun receive(message: Buffer) {
+        if (!receivedNodeId(message))
+            child?.receive(message)
+    }
+
+    private fun receivedNodeId(message: Buffer): Boolean {
         if (_remoteNodeId == null && message.size == NodeId.sizeInBytes) {
             _remoteNodeId = NodeId(message.toUByteArray())
             _nodeIdHandshakeContinuation?.resume(Unit)
-        } else {
-            child?.receive(message)
+            return true
         }
+        return false
     }
 
     override suspend fun close() {
         performClosure()
+        backgroundJob?.cancel()
         socket.close()
     }
 
@@ -131,14 +147,12 @@ class TCP(port: UShort = getRandomPort()) : Transport() {
 
     private val listener = TCPServerSocket(port)
 
-    private var acceptJob: Job? = null
-
     val listenerEndpoint: Endpoint by lazy {
         IPEndpoint.toEndpoint(listener.channel.localAddress as InetSocketAddress)
     }
 
     override suspend fun init() {
-        acceptJob = scope?.launch { runAccept() }
+        scope?.launch { runAccept() }
     }
 
     private suspend fun runAccept() = coroutineScope {
@@ -151,7 +165,11 @@ class TCP(port: UShort = getRandomPort()) : Transport() {
     private suspend fun processStream(socket: TCPSocket): TCPStream = coroutineScope {
         val stream = TCPStream(socket, nodeId!!)
 
-        launch { scope?.launch { stream.run() } }
+        // Separate launch to run message receive process
+        // after we setup continuation block
+        // otherwise we may receive remote node's NodeId
+        // before we are ready for it
+        launch { stream.backgroundJob = scope?.launch { stream.run() } }
         stream.performNodeIdHandshake()
 
         extension?.extendStream(stream)
@@ -169,6 +187,8 @@ class TCP(port: UShort = getRandomPort()) : Transport() {
         socket.connect(IPEndpoint.fromEndpoint(endpoint))
 
         val stream = processStream(socket)
+
+        // Connection was init by our side
         stream.performHandshake()
     }
 }

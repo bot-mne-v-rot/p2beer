@@ -4,9 +4,8 @@ import org.junit.jupiter.api.*
 import io.mockk.*
 
 import kotlinx.coroutines.*
-import ru.emkn.p2beer.p2p.NodeId
-import kotlin.coroutines.*
 
+import ru.emkn.p2beer.p2p.NodeId
 import ru.emkn.p2beer.p2p.network.*
 import ru.emkn.p2beer.p2p.network.transports.TCP
 import kotlin.test.assertEquals
@@ -64,7 +63,7 @@ class TCPTests {
             }
         }
 
-        delay(10)
+        delay(10) // Waiting for both sides to receive nodeIds
 
         assertEquals(nodeId1, inter1.thisNodeId)
         assertEquals(nodeId2, inter2.thisNodeId)
@@ -76,13 +75,16 @@ class TCPTests {
 
             val msgA = "A".toByteArray()
             inter1.send(msgA)
-            delay(20)
+            delay(20) // Waiting for our message to be sent
             coVerify { mock2.receive(msgA) }
 
             inter1.close()
 
             coVerify { mock1.performClosure() }
         }
+
+        // Waiting for both sides to close
+        delay(50)
 
         scope.cancel()
     }
