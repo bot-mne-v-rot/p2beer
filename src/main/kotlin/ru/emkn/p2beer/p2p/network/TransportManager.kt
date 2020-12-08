@@ -3,11 +3,11 @@ package ru.emkn.p2beer.p2p.network
 import kotlinx.coroutines.*
 import ru.emkn.p2beer.p2p.*
 
-val p2pContextFactory
+val p2pScopeFactory
     @ObsoleteCoroutinesApi
     get() = CoroutineScope(newSingleThreadContext("P2P"))
 
-class TransportManager(val nodeId: NodeId, val scope: CoroutineScope = p2pContextFactory) {
+class TransportManager(val nodeId: NodeId, val scope: CoroutineScope = p2pScopeFactory) {
     val transportsByName: Map<Name, Transport>
         get() = _transportsMap
 
