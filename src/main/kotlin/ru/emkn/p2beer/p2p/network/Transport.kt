@@ -1,9 +1,12 @@
 package ru.emkn.p2beer.p2p.network
 
 import kotlinx.coroutines.*
+
 import ru.emkn.p2beer.p2p.Name
 import ru.emkn.p2beer.p2p.NodeId
 import ru.emkn.p2beer.p2p.network.traits.Trait
+
+import java.io.IOException
 
 data class TransportDescriptor(val name: Name, val traits: Set<Trait>)
 
@@ -37,5 +40,13 @@ abstract class Transport {
 
     abstract suspend fun init()
 
+    /**
+     * Initiates new connection then extends new stream
+     * and finally calls [StreamNode.performHandshake]
+     *
+     * @throws IOException
+     * @throws HandshakeFailedException
+     * @throws IllegalStateException
+     */
     abstract suspend fun connect(endpoint: Endpoint)
 }

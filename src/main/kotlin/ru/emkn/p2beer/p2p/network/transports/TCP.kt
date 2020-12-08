@@ -93,7 +93,16 @@ private class TCPStream(private val socket: TCPSocket, override val thisNodeId: 
 
     override suspend fun receive(message: Buffer) {
         if (!receivedNodeId(message))
+            childReceive(message)
+    }
+
+    private suspend fun childReceive(message: Buffer) {
+        try {
             child?.receive(message)
+        } catch (e: Throwable) {
+            // We ignore all the errors because there
+            // is no one further to process them.
+        }
     }
 
     private fun receivedNodeId(message: Buffer): Boolean {
