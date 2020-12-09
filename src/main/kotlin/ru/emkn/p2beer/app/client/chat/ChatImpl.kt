@@ -3,7 +3,7 @@ package ru.emkn.p2beer.app.client.chat
 import ru.emkn.p2beer.app.p2bLib.*
 import kotlin.collections.ArrayDeque
 
-class DefaultChat ( userId : PublicKeyRSA, userName : String ) : Chat {
+class ChatImpl (userId : PublicKeyRSA, userName : String ) : Chat {
 
     private val loadedMessages : ArrayDeque<Message> = ArrayDeque()
 
@@ -23,6 +23,4 @@ class DefaultChat ( userId : PublicKeyRSA, userName : String ) : Chat {
     override fun updateOnlineStatus(newStatus: Boolean) {
         this.onlineStatus = newStatus
     }
-
-
 }

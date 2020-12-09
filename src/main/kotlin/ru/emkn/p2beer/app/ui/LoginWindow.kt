@@ -1,4 +1,4 @@
-package ru.emkn.p2beer.gui
+package ru.emkn.p2beer.app.ui
 
 import com.googlecode.lanterna.TextColor
 import com.googlecode.lanterna.gui2.*
@@ -6,7 +6,6 @@ import com.googlecode.lanterna.gui2.dialogs.MessageDialog
 import com.googlecode.lanterna.gui2.dialogs.MessageDialogButton
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory
 import java.io.IOException
-import java.util.*
 
 fun main(args: Array<String>) {
     try {

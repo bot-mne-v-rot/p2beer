@@ -2,7 +2,7 @@ package ru.emkn.p2beer.app.p2bLib
 
 import ru.emkn.p2beer.app.client.user.*
 
-class FriendsManagerDefaultImpl (
+class FriendsManagerImpl (
     override var allFriendsConnected: Boolean
 ) : FriendsManager {
     override fun addFriend(userId: PublicKey): Friend {

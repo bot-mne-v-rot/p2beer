@@ -7,5 +7,6 @@ data class Account (
 )
 
 data class Friend (
-    val userInfo: UserInfo
+    val userInfo: UserInfo,
+    var isConnection: Boolean
 )
