@@ -1,5 +1,6 @@
 package ru.emkn.p2beer.app.client.user
 
-class FriendConnection {
-
+interface FriendConnection {
+    val publicKey : PublicKey
+    val endpoint : String
 }

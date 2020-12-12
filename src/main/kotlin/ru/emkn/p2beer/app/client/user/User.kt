@@ -1,12 +1,14 @@
 package ru.emkn.p2beer.app.client.user
 
+import com.google.gson.annotations.SerializedName
+
 data class Account (
-    val userInfo: UserInfo,
-    val privateKey: PrivateKey,
-    val friends: Set<Friend>
+    @SerializedName("userInfo") val userInfo: UserInfo,
+    @SerializedName("privateKey") val privateKey: PrivateKey,
+    @SerializedName("friends") val friends: Set<Friend>
 )
 
 data class Friend (
-    val userInfo: UserInfo,
-    var isConnection: Boolean
+    @SerializedName("userInfo") val userInfo: UserInfo,
+    @SerializedName("isConnected") var isConnection: Boolean
 )

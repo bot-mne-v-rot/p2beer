@@ -1,9 +1,9 @@
 package ru.emkn.p2beer.app.client.chat
 
-import ru.emkn.p2beer.app.p2bLib.*
+import ru.emkn.p2beer.app.client.util.defaultLastSeen
 import kotlin.collections.ArrayDeque
 
-class ChatImpl (userId : PublicKeyRSA, userName : String ) : Chat {
+class ChatImpl (private val userName : String) : Chat {
 
     private val loadedMessages : ArrayDeque<Message> = ArrayDeque()
 
@@ -14,7 +14,7 @@ class ChatImpl (userId : PublicKeyRSA, userName : String ) : Chat {
      * Btw 13 September is a programmer's day
      */
 
-    var lastSeen : Long = 1252851728
+    var lastSeen : Long = defaultLastSeen
 
     override fun addMessage(message: Message) {
         this.loadedMessages.addFirst(message)
@@ -23,4 +23,6 @@ class ChatImpl (userId : PublicKeyRSA, userName : String ) : Chat {
     override fun updateOnlineStatus(newStatus: Boolean) {
         this.onlineStatus = newStatus
     }
+
+    override fun toString () = this.userName
 }

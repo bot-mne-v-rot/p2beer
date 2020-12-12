@@ -4,7 +4,7 @@ import com.googlecode.lanterna.TerminalSize
 import com.googlecode.lanterna.gui2.*
 import ru.emkn.p2beer.app.client.chat.ChatImpl
 
-class DialogGUI (private val info : ChatImpl) {
+class DialogWindow (private val info : ChatImpl) {
     fun addDialogWindow(
         actionListBox : ActionListBox,
         textGUI : WindowBasedTextGUI,
@@ -67,5 +67,4 @@ class DialogGUI (private val info : ChatImpl) {
 
         }
     }
-
 }
