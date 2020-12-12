@@ -120,4 +120,15 @@ class NodeIdTests {
 
         assertEquals(NodeId.sizeInBits, a lcp a)
     }
+
+    @Test
+    fun `test LCP within first byte`() {
+        val a = NodeId.zeroes()
+        val b = NodeId.zeroes()
+
+        a[0] = (0b11111111).toUByte()
+        b[0] = (0b10111111).toUByte()
+
+        assertEquals(1, a lcp b)
+    }
 }
