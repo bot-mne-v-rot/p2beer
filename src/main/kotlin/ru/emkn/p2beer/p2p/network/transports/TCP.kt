@@ -29,6 +29,7 @@ private class TCPSocket(val channel: AsynchronousSocketChannel = AsynchronousSoc
     init {
         channel.setOption(SO_REUSEADDR, true)
         channel.setOption(SO_REUSEPORT, true)
+        channel.setOption(SO_KEEPALIVE, true)
     }
 
     override suspend fun connect(address: InetSocketAddress) {
@@ -52,6 +53,7 @@ private class TCPSocket(val channel: AsynchronousSocketChannel = AsynchronousSoc
 
 private class TCPServerSocket(port: UShort) {
     val channel: AsynchronousServerSocketChannel = AsynchronousServerSocketChannel.open()
+
     init {
         channel.bind(InetSocketAddress("0.0.0.0", port.toInt()))
         channel.setOption(SO_REUSEADDR, true)
@@ -69,16 +71,17 @@ private class TCPStream(private val socket: TCPSocket, override val thisNodeId: 
 
     var backgroundJob: Job? = null
 
-    suspend fun run() = coroutineScope {
+    suspend fun run() =
         try {
-            launch { writer.run() }
-            launch { runReceiveLoop() }
+            coroutineScope {
+                launch { writer.run() }
+                launch { runReceiveLoop() }
+            }
         } catch (e: ClosedChannelException) {
             // It's absolutely ok.
             // We catch it here to make all of the
             // endless loops stop.
         }
-    }
 
     private suspend fun runReceiveLoop() = coroutineScope {
         while (true) {
