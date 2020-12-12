@@ -3,7 +3,7 @@ package ru.emkn.p2beer.p2p.network
 import kotlinx.coroutines.*
 
 import ru.emkn.p2beer.p2p.Name
-import ru.emkn.p2beer.p2p.NodeId
+import ru.emkn.p2beer.p2p.PeerId
 import ru.emkn.p2beer.p2p.network.traits.Trait
 
 import java.io.IOException
@@ -28,10 +28,10 @@ abstract class Transport {
     var scope: CoroutineScope? = null
 
     /**
-     * Our [NodeId].
+     * Our [PeerId].
      * Set by [TransportManager].
      */
-    var nodeId: NodeId? = null
+    var peerId: PeerId? = null
 
     /**
      * Describes if transport can connect to the endpoint

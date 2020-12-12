@@ -11,27 +11,27 @@ const val NodeId_sizeInBytes = 32
  * The most significant byte is the first one (its index is 0).
  * The default bit order in each individual byte is preserved.
  */
-data class NodeId(val data: UByteArray = UByteArray(NodeId_sizeInBytes)) {
+data class PeerId(val data: UByteArray = UByteArray(NodeId_sizeInBytes)) {
     init {
         assert(data.size == NodeId_sizeInBytes)
     }
 
-    infix fun xor(other: NodeId) =
-        NodeId((data zip other.data).map { (a, b) ->
+    infix fun xor(other: PeerId) =
+        PeerId((data zip other.data).map { (a, b) ->
             a xor b
         }.toUByteArray())
 
-    infix fun and(other: NodeId) =
-        NodeId((data zip other.data).map { (a, b) ->
+    infix fun and(other: PeerId) =
+        PeerId((data zip other.data).map { (a, b) ->
             a and b
         }.toUByteArray())
 
-    infix fun or(other: NodeId) =
-        NodeId((data zip other.data).map { (a, b) ->
+    infix fun or(other: PeerId) =
+        PeerId((data zip other.data).map { (a, b) ->
             a or b
         }.toUByteArray())
 
-    fun inv() = NodeId(data.map { it.inv() }.toUByteArray())
+    fun inv() = PeerId(data.map { it.inv() }.toUByteArray())
 
     operator fun get(index: Int) = data[index]
 
@@ -55,7 +55,7 @@ data class NodeId(val data: UByteArray = UByteArray(NodeId_sizeInBytes)) {
      * @return positive value if the first is greater than the second
      * @return zero if the first equals to the second
      */
-    fun xorCmp(a: NodeId, b: NodeId): Int {
+    fun xorCmp(a: PeerId, b: PeerId): Int {
         val xorAB = (a xor b)
         val ind = xorAB.data.indexOfFirst { it > 0u }
 
@@ -78,7 +78,7 @@ data class NodeId(val data: UByteArray = UByteArray(NodeId_sizeInBytes)) {
      * @return length of the longest common prefix in bits. If
      * ids are equal, size of id in bits is returned.
      */
-    infix fun lcp(other: NodeId) =
+    infix fun lcp(other: PeerId) =
         (this xor other).countLeadingZeroBits()
 
     /**
@@ -99,20 +99,20 @@ data class NodeId(val data: UByteArray = UByteArray(NodeId_sizeInBytes)) {
         const val sizeInBytes = NodeId_sizeInBytes
         const val sizeInBits = NodeId_sizeInBytes * UByte.SIZE_BITS
 
-        fun zeroes(): NodeId {
-            val nodeId = NodeId()
+        fun zeroes(): PeerId {
+            val nodeId = PeerId()
             nodeId.data.fill(0u)
             return nodeId
         }
 
-        fun max(): NodeId {
-            val nodeId = NodeId()
+        fun max(): PeerId {
+            val nodeId = PeerId()
             nodeId.data.fill(UByte.MAX_VALUE)
             return nodeId
         }
 
         fun random() =
-            NodeId(Random.nextUBytes(NodeId_sizeInBytes))
+            PeerId(Random.nextUBytes(NodeId_sizeInBytes))
     }
 
     /**
@@ -122,7 +122,7 @@ data class NodeId(val data: UByteArray = UByteArray(NodeId_sizeInBytes)) {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as NodeId
+        other as PeerId
 
         if (!data.contentEquals(other.data)) return false
 

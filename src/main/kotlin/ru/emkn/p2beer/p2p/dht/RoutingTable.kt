@@ -5,29 +5,33 @@ import ru.emkn.p2beer.p2p.network.*
 
 import java.util.*
 
-data class Node(val id: NodeId, val endpoint: Endpoint)
-typealias KBucket = MutableList<Node>
+data class Peer(
+    val id: PeerId,
+    val endpoint: Endpoint = Endpoint(),
+    val stream: StreamNode = StreamLeafNode()
+)
+typealias KBucket = MutableList<Peer>
 
 /**
  * [Whitepaper](https://pdos.csail.mit.edu/~petar/papers/maymounkov-kademlia-lncs.pdf)
  */
-class RoutingTable(val thisId: NodeId, val maxKBucketSize: Int = 20) {
+class RoutingTable(val thisId: PeerId, val maxKBucketSize: Int = 20) {
 
     // Filled with the one initial k-bucket
     val buckets = mutableListOf<KBucket>(emptyKBucket())
 
-    private fun findBucket(id: NodeId): KBucket? {
+    private fun findBucket(id: PeerId): KBucket? {
         return if (id != thisId)
             buckets.getOrNull(id lcp thisId) ?: buckets.last()
         else
             null
     }
 
-    fun findNode(id: NodeId): Node? =
+    fun findPeer(id: PeerId): Peer? =
         findBucket(id)?.firstOrNull { node -> node.id == id }
 
-    infix fun contains(id: NodeId): Boolean =
-        findNode(id) != null
+    infix fun contains(id: PeerId): Boolean =
+        findPeer(id) != null
 
     /**
      * We can split only the last bucket.
@@ -37,7 +41,7 @@ class RoutingTable(val thisId: NodeId, val maxKBucketSize: Int = 20) {
      * @return true if k-bucket was successfully split.
      */
     private fun splitBucket(bucket: KBucket): Boolean {
-        if (bucket != buckets.last() || buckets.size == NodeId.sizeInBits)
+        if (bucket != buckets.last() || buckets.size == PeerId.sizeInBits)
             return false
 
         val (prevBucket, nextBucket) =
@@ -50,27 +54,35 @@ class RoutingTable(val thisId: NodeId, val maxKBucketSize: Int = 20) {
         return true
     }
 
-    fun putNode(node: Node) {
-        if (contains(node.id))
-            return
+    /**
+     * @return true if node was successfully put
+     */
+    fun putPeer(peer: Peer): Boolean {
+        if (contains(peer.id))
+            return false
 
-        var bucket = findBucket(node.id) ?: return
+        var bucket = findBucket(peer.id) ?: return false
 
         if (bucket.size == maxKBucketSize) {
             if (splitBucket(bucket))
-                bucket = findBucket(node.id)!!
+                bucket = findBucket(peer.id)!!
             else
-                return
+                return false
         }
 
-        if (bucket.size < maxKBucketSize)
-            bucket.add(node)
+        // Bad luck
+        if (bucket.size == maxKBucketSize)
+            return false
+
+        bucket.add(peer)
+
+        return true
     }
 
-    fun findNearestNodes(id: NodeId): List<Node> {
+    fun findNearestPeers(id: PeerId): List<Peer> {
         val bucket = findBucket(id) ?: return emptyList()
 
-        val result = mutableListOf<Node>()
+        val result = mutableListOf<Peer>()
         result.addAll(bucket)
 
         val cur = buckets.indexOf(bucket)
@@ -101,6 +113,6 @@ class RoutingTable(val thisId: NodeId, val maxKBucketSize: Int = 20) {
 
     companion object {
         private fun emptyKBucket() =
-            LinkedList<Node>()
+            LinkedList<Peer>()
     }
 }

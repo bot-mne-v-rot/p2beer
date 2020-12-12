@@ -65,7 +65,7 @@ private class TCPServerSocket(port: UShort) {
     })
 }
 
-private class TCPStream(private val socket: TCPSocket, override val thisNodeId: NodeId) : StreamListNode() {
+private class TCPStream(private val socket: TCPSocket, override val thisPeerId: PeerId) : StreamListNode() {
     private val reader = MessageReader(socket)
     private val writer = MessageWriter(socket)
 
@@ -95,7 +95,7 @@ private class TCPStream(private val socket: TCPSocket, override val thisNodeId: 
     }
 
     override suspend fun receive(message: Buffer) {
-        if (!receivedNodeId(message))
+        if (!receivedPeerId(message))
             childReceive(message)
     }
 
@@ -108,10 +108,10 @@ private class TCPStream(private val socket: TCPSocket, override val thisNodeId: 
         }
     }
 
-    private fun receivedNodeId(message: Buffer): Boolean {
-        if (_remoteNodeId == null && message.size == NodeId.sizeInBytes) {
-            _remoteNodeId = NodeId(message.toUByteArray())
-            _nodeIdHandshakeContinuation?.resume(Unit)
+    private fun receivedPeerId(message: Buffer): Boolean {
+        if (_remotePeerId == null && message.size == PeerId.sizeInBytes) {
+            _remotePeerId = PeerId(message.toUByteArray())
+            _peerIdHandshakeContinuation?.resume(Unit)
             return true
         }
         return false
@@ -125,22 +125,22 @@ private class TCPStream(private val socket: TCPSocket, override val thisNodeId: 
 
     /**
      * When connection is opened our streams
-     * exchange their NodeId's. It is done separately
+     * exchange their PeerId's. It is done separately
      * because extensions and child streams may use this
      * info during stream extending
      */
-    suspend fun performNodeIdHandshake(): Unit = coroutineScope {
+    suspend fun performPeerIdHandshake(): Unit = coroutineScope {
         suspendCoroutine {
-            _nodeIdHandshakeContinuation = it
-            launch { send(thisNodeId.data.toByteArray()) }
+            _peerIdHandshakeContinuation = it
+            launch { send(thisPeerId.data.toByteArray()) }
         }
     }
 
-    private var _nodeIdHandshakeContinuation: Continuation<Unit>? = null
-    private var _remoteNodeId: NodeId? = null
+    private var _peerIdHandshakeContinuation: Continuation<Unit>? = null
+    private var _remotePeerId: PeerId? = null
 
-    override val remoteNodeId: NodeId
-        get() = _remoteNodeId!!
+    override val remotePeerId: PeerId
+        get() = _remotePeerId!!
 
     override val thisEndpoint: Endpoint by lazy {
         IPEndpoint.toEndpoint(socket.channel.localAddress as InetSocketAddress)
@@ -175,14 +175,14 @@ class TCP(port: UShort = getRandomPort()) : Transport() {
     }
 
     private suspend fun processStream(socket: TCPSocket): TCPStream = coroutineScope {
-        val stream = TCPStream(socket, nodeId!!)
+        val stream = TCPStream(socket, peerId!!)
 
         // Separate launch to run message receive process
         // after we setup continuation block
-        // otherwise we may receive remote node's NodeId
+        // otherwise we may receive remote peer's PeerId
         // before we are ready for it
         launch { stream.backgroundJob = scope?.launch { stream.run() } }
-        stream.performNodeIdHandshake()
+        stream.performPeerIdHandshake()
 
         extension?.extendStream(stream)
         stream

@@ -7,7 +7,7 @@ val p2pScopeFactory
     @ObsoleteCoroutinesApi
     get() = CoroutineScope(newSingleThreadContext("P2P"))
 
-class TransportManager(val nodeId: NodeId, val scope: CoroutineScope = p2pScopeFactory) {
+class TransportManager(val peerId: PeerId, val scope: CoroutineScope = p2pScopeFactory) {
     val transportsByName: Map<Name, Transport>
         get() = _transportsMap
 
@@ -27,7 +27,7 @@ class TransportManager(val nodeId: NodeId, val scope: CoroutineScope = p2pScopeF
     fun registerTransport(transport: Transport) {
         transport.extension = extension
         transport.scope = scope
-        transport.nodeId = nodeId
+        transport.peerId = peerId
 
         _transportsMap[transport.descriptor.name] = transport
 

@@ -3,36 +3,36 @@ package p2p
 import org.junit.jupiter.api.*
 import kotlin.test.*
 
-import ru.emkn.p2beer.p2p.NodeId
+import ru.emkn.p2beer.p2p.PeerId
 import ru.emkn.p2beer.p2p.NodeId_sizeInBytes
 
-class NodeIdTests {
+class PeerIdTests {
     @Test
     fun `check for correct sizes`() {
-        val random = NodeId.random()
+        val random = PeerId.random()
 
-        assertEquals(NodeId_sizeInBytes, NodeId.sizeInBytes)
-        assertEquals(NodeId_sizeInBytes * UByte.SIZE_BITS, NodeId.sizeInBits)
+        assertEquals(NodeId_sizeInBytes, PeerId.sizeInBytes)
+        assertEquals(NodeId_sizeInBytes * UByte.SIZE_BITS, PeerId.sizeInBits)
         assertEquals(NodeId_sizeInBytes, random.data.size)
     }
 
     @Test
     fun `create NodeId with zeroes`() {
-        val zeroes = NodeId.zeroes()
+        val zeroes = PeerId.zeroes()
 
         zeroes.data.forEach { assertEquals(0u, it) }
     }
 
     @Test
     fun `create NodeId with max values`() {
-        val max = NodeId.max()
+        val max = PeerId.max()
 
         max.data.forEach { assertEquals(UByte.MAX_VALUE, it) }
     }
 
     @Test
     fun `correct toString`() {
-        val id = NodeId.zeroes()
+        val id = PeerId.zeroes()
         id[0] = 5u
         id[1] = 16u
 
@@ -50,8 +50,8 @@ class NodeIdTests {
 
     @Test
     fun `test xor`() {
-        val a = NodeId.random()
-        val b = NodeId.random()
+        val a = PeerId.random()
+        val b = PeerId.random()
 
         val xor = a xor b
 
@@ -62,8 +62,8 @@ class NodeIdTests {
 
     @Test
     fun `test bitwise and`() {
-        val a = NodeId.random()
-        val b = NodeId.random()
+        val a = PeerId.random()
+        val b = PeerId.random()
 
         val and = a and b
 
@@ -74,8 +74,8 @@ class NodeIdTests {
 
     @Test
     fun `test bitwise or`() {
-        val a = NodeId.random()
-        val b = NodeId.random()
+        val a = PeerId.random()
+        val b = PeerId.random()
 
         val or = a or b
 
@@ -86,7 +86,7 @@ class NodeIdTests {
 
     @Test
     fun `test bitwise inv`() {
-        val orig = NodeId.random()
+        val orig = PeerId.random()
         val inv = orig.inv()
 
         (orig.data zip inv.data).forEach { (origByte, invByte) ->
@@ -96,7 +96,7 @@ class NodeIdTests {
 
     @Test
     fun `test bit at`() {
-        val id = NodeId.zeroes()
+        val id = PeerId.zeroes()
         id[5] = 16u
         val pos = 5 * 8 + 3
         assertTrue(id.bitAt(pos))
@@ -105,8 +105,8 @@ class NodeIdTests {
 
     @Test
     fun `test LCP on different`() {
-        val a = NodeId.zeroes()
-        val b = NodeId.zeroes()
+        val a = PeerId.zeroes()
+        val b = PeerId.zeroes()
 
         a[5] = 80u
         b[5] = 72u
@@ -116,15 +116,15 @@ class NodeIdTests {
 
     @Test
     fun `test LCP on equal`() {
-        val a = NodeId.random()
+        val a = PeerId.random()
 
-        assertEquals(NodeId.sizeInBits, a lcp a)
+        assertEquals(PeerId.sizeInBits, a lcp a)
     }
 
     @Test
     fun `test LCP within first byte`() {
-        val a = NodeId.zeroes()
-        val b = NodeId.zeroes()
+        val a = PeerId.zeroes()
+        val b = PeerId.zeroes()
 
         a[0] = (0b11111111).toUByte()
         b[0] = (0b10111111).toUByte()

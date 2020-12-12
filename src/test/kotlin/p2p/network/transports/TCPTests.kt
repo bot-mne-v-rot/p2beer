@@ -5,7 +5,7 @@ import io.mockk.*
 
 import kotlinx.coroutines.*
 
-import ru.emkn.p2beer.p2p.NodeId
+import ru.emkn.p2beer.p2p.PeerId
 import ru.emkn.p2beer.p2p.network.*
 import ru.emkn.p2beer.p2p.network.transports.TCP
 import kotlin.test.assertEquals
@@ -36,11 +36,11 @@ class TCPTests {
             manager.extension = ext1
         }
 
-        val nodeId1 = NodeId.random()
-        val nodeId2 = NodeId.random()
+        val peerId1 = PeerId.random()
+        val peerId2 = PeerId.random()
 
-        val manager1 = TransportManager(nodeId1, scope)
-        val manager2 = TransportManager(nodeId2, scope)
+        val manager1 = TransportManager(peerId1, scope)
+        val manager2 = TransportManager(peerId2, scope)
 
         val tcp1 = TCP()
         val tcp2 = TCP()
@@ -65,10 +65,10 @@ class TCPTests {
 
         delay(10) // Waiting for both sides to receive nodeIds
 
-        assertEquals(nodeId1, inter1.thisNodeId)
-        assertEquals(nodeId2, inter2.thisNodeId)
-        assertEquals(nodeId2, inter1.remoteNodeId)
-        assertEquals(nodeId1, inter2.remoteNodeId)
+        assertEquals(peerId1, inter1.thisPeerId)
+        assertEquals(peerId2, inter2.thisPeerId)
+        assertEquals(peerId2, inter1.remotePeerId)
+        assertEquals(peerId1, inter2.remotePeerId)
 
         withContext(scope.coroutineContext) {
             coVerify { mock1.performHandshake() }

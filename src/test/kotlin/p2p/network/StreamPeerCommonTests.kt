@@ -14,7 +14,7 @@ import java.lang.reflect.*
 
 import ru.emkn.p2beer.p2p.network.*
 
-class StreamNodeCommonTests {
+class StreamPeerCommonTests {
     @ParameterizedTest
     @MethodSource("streamNodeFactoriesToTestHandshakeAndClosure")
     fun `test handshake and closure with StreamNode`(streamNodeFactory: () -> StreamNode) = runBlocking {

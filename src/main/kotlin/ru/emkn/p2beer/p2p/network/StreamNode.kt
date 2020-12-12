@@ -1,6 +1,6 @@
 package ru.emkn.p2beer.p2p.network
 
-import ru.emkn.p2beer.p2p.NodeId
+import ru.emkn.p2beer.p2p.PeerId
 import ru.emkn.p2beer.p2p.Buffer
 
 /**
@@ -89,19 +89,19 @@ interface StreamNode {
     val transport: TransportDescriptor
 
     /**
-     * Our node id. It's one for the whole application
+     * Our peer id. It's one for the whole application
      * but is put here for convenience.
      *
      * DON'T ACCESS BEFORE PARENT IS ATTACHED
      */
-    val thisNodeId: NodeId
+    val thisPeerId: PeerId
 
     /**
-     * Remote node's NodeId associated with the Stream
+     * Remote node's PeerId associated with the Stream
      *
      * DON'T ACCESS BEFORE PARENT IS ATTACHED
      */
-    val remoteNodeId: NodeId
+    val remotePeerId: PeerId
 
     /**
      * Endpoint from which we communicate
@@ -163,12 +163,12 @@ open class StreamLeafNode : StreamNode {
         // Message processing
     }
 
-    override val thisNodeId: NodeId by lazy {
-        parent!!.thisNodeId
+    override val thisPeerId: PeerId by lazy {
+        parent!!.thisPeerId
     }
 
-    override val remoteNodeId: NodeId by lazy {
-        parent!!.remoteNodeId
+    override val remotePeerId: PeerId by lazy {
+        parent!!.remotePeerId
     }
 
     override val transport: TransportDescriptor by lazy {
