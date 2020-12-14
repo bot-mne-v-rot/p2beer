@@ -4,16 +4,16 @@ package ru.emkn.p2beer.p2p
 import kotlin.random.Random
 import kotlin.random.nextUBytes
 
-const val NodeId_sizeInBytes = 32
+const val PeerId_sizeInBytes = 32
 
 /**
- * Represents long number of [NodeId_sizeInBytes].
+ * Represents long number of [PeerId_sizeInBytes].
  * The most significant byte is the first one (its index is 0).
  * The default bit order in each individual byte is preserved.
  */
-data class PeerId(val data: UByteArray = UByteArray(NodeId_sizeInBytes)) {
+data class PeerId(val data: UByteArray = UByteArray(PeerId_sizeInBytes)) {
     init {
-        assert(data.size == NodeId_sizeInBytes)
+        assert(data.size == PeerId_sizeInBytes)
     }
 
     infix fun xor(other: PeerId) =
@@ -96,8 +96,8 @@ data class PeerId(val data: UByteArray = UByteArray(NodeId_sizeInBytes)) {
     }
 
     companion object {
-        const val sizeInBytes = NodeId_sizeInBytes
-        const val sizeInBits = NodeId_sizeInBytes * UByte.SIZE_BITS
+        const val sizeInBytes = PeerId_sizeInBytes
+        const val sizeInBits = PeerId_sizeInBytes * UByte.SIZE_BITS
 
         fun zeroes(): PeerId {
             val nodeId = PeerId()
@@ -112,7 +112,7 @@ data class PeerId(val data: UByteArray = UByteArray(NodeId_sizeInBytes)) {
         }
 
         fun random() =
-            PeerId(Random.nextUBytes(NodeId_sizeInBytes))
+            PeerId(Random.nextUBytes(PeerId_sizeInBytes))
     }
 
     /**

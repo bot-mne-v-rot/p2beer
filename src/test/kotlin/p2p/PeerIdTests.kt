@@ -4,16 +4,16 @@ import org.junit.jupiter.api.*
 import kotlin.test.*
 
 import ru.emkn.p2beer.p2p.PeerId
-import ru.emkn.p2beer.p2p.NodeId_sizeInBytes
+import ru.emkn.p2beer.p2p.PeerId_sizeInBytes
 
 class PeerIdTests {
     @Test
     fun `check for correct sizes`() {
         val random = PeerId.random()
 
-        assertEquals(NodeId_sizeInBytes, PeerId.sizeInBytes)
-        assertEquals(NodeId_sizeInBytes * UByte.SIZE_BITS, PeerId.sizeInBits)
-        assertEquals(NodeId_sizeInBytes, random.data.size)
+        assertEquals(PeerId_sizeInBytes, PeerId.sizeInBytes)
+        assertEquals(PeerId_sizeInBytes * UByte.SIZE_BITS, PeerId.sizeInBits)
+        assertEquals(PeerId_sizeInBytes, random.data.size)
     }
 
     @Test

@@ -1,12 +1,12 @@
 package p2p.dht
 
-import org.junit.jupiter.api.Test
-import ru.emkn.p2beer.p2p.PeerId
-import ru.emkn.p2beer.p2p.dht.Peer
-import ru.emkn.p2beer.p2p.dht.RoutingTable
+import org.junit.jupiter.api.*
+import kotlin.test.*
+
+import ru.emkn.p2beer.p2p.*
+import ru.emkn.p2beer.p2p.dht.*
 import ru.emkn.p2beer.p2p.network.Endpoint
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+
 
 class RoutingTableTests {
     @Test

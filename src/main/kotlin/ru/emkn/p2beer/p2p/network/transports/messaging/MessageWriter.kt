@@ -10,9 +10,13 @@ class MessageWriter(private val socket: Socket) {
 
     suspend fun run() {
         for (message in queue) {
-            val buffer = message.toByteBuffer()
-            while (buffer.hasRemaining())
-                socket.write(buffer)
+            write(message)
         }
+    }
+
+    suspend fun write(message: Message) {
+        val buffer = message.toByteBuffer()
+        while (buffer.hasRemaining())
+            socket.write(buffer)
     }
 }

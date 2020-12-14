@@ -8,6 +8,7 @@ import kotlinx.coroutines.*
 import ru.emkn.p2beer.p2p.PeerId
 import ru.emkn.p2beer.p2p.network.*
 import ru.emkn.p2beer.p2p.network.transports.TCP
+import kotlin.random.Random
 import kotlin.test.assertEquals
 
 private class AutoAttachExtension(private val stream: StreamListNode) : ExtensionListNode() {
@@ -28,7 +29,7 @@ class TCPTests {
             coEvery { mock.performClosure() } returns Unit
             every { mock.parent = any() } returns Unit
         }
-        fun setup(manager: TransportManager, transport: TCP, inter: StreamListNode, mock: StreamListNode) {
+        suspend fun setup(manager: TransportManager, transport: TCP, inter: StreamListNode, mock: StreamListNode) {
             manager.registerTransport(transport)
             val ext1 = AutoAttachExtension(inter)
             val ext2 = AutoAttachExtension(mock)
@@ -63,7 +64,7 @@ class TCPTests {
             }
         }
 
-        delay(10) // Waiting for both sides to receive nodeIds
+        delay(10) // Waiting for both sides to receive peerIds
 
         assertEquals(peerId1, inter1.thisPeerId)
         assertEquals(peerId2, inter2.thisPeerId)
@@ -73,10 +74,17 @@ class TCPTests {
         withContext(scope.coroutineContext) {
             coVerify { mock1.performHandshake() }
 
-            val msgA = "A".toByteArray()
-            inter1.send(msgA)
-            delay(20) // Waiting for our message to be sent
-            coVerify { mock2.receive(msgA) }
+            repeat(100) {
+                val msgA = Random.Default.nextBytes(2000)
+                inter1.send(msgA)
+                delay(20) // Waiting for our message to be sent
+                coVerify { mock2.receive(msgA) }
+
+                val msgB = Random.Default.nextBytes(2000)
+                inter2.send(msgB)
+                delay(20) // Waiting for our message to be sent
+                coVerify { mock1.receive(msgB) }
+            }
 
             inter1.close()
 

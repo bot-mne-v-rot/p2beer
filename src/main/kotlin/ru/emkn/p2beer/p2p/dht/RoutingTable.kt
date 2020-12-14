@@ -8,7 +8,7 @@ import java.util.*
 data class Peer(
     val id: PeerId,
     val endpoint: Endpoint = Endpoint(),
-    val stream: StreamNode = StreamLeafNode()
+    val stream: StreamNode? = null
 )
 typealias KBucket = MutableList<Peer>
 
@@ -80,7 +80,7 @@ class RoutingTable(val thisId: PeerId, val maxKBucketSize: Int = 20) {
     }
 
     fun findNearestPeers(id: PeerId): List<Peer> {
-        val bucket = findBucket(id) ?: return emptyList()
+        val bucket = findBucket(id) ?: return buckets.last()
 
         val result = mutableListOf<Peer>()
         result.addAll(bucket)

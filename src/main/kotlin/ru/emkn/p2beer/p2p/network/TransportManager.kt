@@ -24,16 +24,15 @@ class TransportManager(val peerId: PeerId, val scope: CoroutineScope = p2pScopeF
             scope.launch { extension?.init() }
         }
 
-    fun registerTransport(transport: Transport) {
+    suspend fun registerTransport(transport: Transport) {
         transport.extension = extension
         transport.scope = scope
         transport.peerId = peerId
 
         _transportsMap[transport.descriptor.name] = transport
 
-        runBlocking {
-            val job = scope.launch { transport.init() }
-            job.join()
+        withContext(scope.coroutineContext) {
+            transport.init()
         }
     }
 }
