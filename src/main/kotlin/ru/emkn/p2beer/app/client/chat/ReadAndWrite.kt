@@ -2,45 +2,28 @@ package ru.emkn.p2beer.app.client.chat
 
 import java.io.RandomAccessFile
 
-fun readString(file: RandomAccessFile, length: Int): String {
-    val buffer = ByteArray(length)
-    file.read(buffer)
-    return buffer.decodeToString()
-}
-
-fun writeString(file: RandomAccessFile, start: Long, string: String) {
-    file.seek(start)
-    file.write(string.toByteArray())
-}
-
-/**
- * Read one message from [fileWithMessages].
- *
- * [start] defines the position of message in file.
- */
 fun readMessage(fileWithMessages: RandomAccessFile, start: Long): Message {
     fileWithMessages.seek(start)
-    val text = readString(fileWithMessages, fileWithMessages.readInt())
+
+    val buffer = ByteArray(fileWithMessages.readInt())
+    fileWithMessages.read(buffer)
+
+    val text = buffer.decodeToString()
+
     val messageId = fileWithMessages.readLong()
     val timeStamp = fileWithMessages.readLong()
     val twoBytesOfUserId = ((fileWithMessages.read() shl 8) or fileWithMessages.read()).toUShort()
+
     val info = MessageId(messageId, timeStamp, twoBytesOfUserId)
-    val sender = TODO()
+
+    val sender = ByteArray(32)
+    fileWithMessages.read(sender)
+
     return Message(text, info, sender)
 }
 
-fun writeMessage(fileWithMessages: RandomAccessFile, message: Message) {
-    writeString(fileWithMessages, fileWithMessages.length(), message.text)
-    fileWithMessages.writeLong(message.info.messageID)
-    fileWithMessages.writeLong(message.info.timestamp)
-    fileWithMessages.write(message.info.twoBytesOfUserID.toInt() shr 8)
-    fileWithMessages.write(message.info.twoBytesOfUserID.toInt() shr 0)
-    TODO("Write publicKey")
-}
-
 /**
- * @return list of messages stored in [node] from [fileWithMessages]
- * that contains all messages.
+ * @return list of messages stored in [node]
  */
 fun getMessages(node: Node, fileWithMessages: RandomAccessFile): List<Message> {
     val messages = mutableListOf<Message>()
@@ -50,19 +33,37 @@ fun getMessages(node: Node, fileWithMessages: RandomAccessFile): List<Message> {
     return messages
 }
 
+fun writeMessage(fileWithMessages: RandomAccessFile, message: Message) {
+    fileWithMessages.seek(fileWithMessages.length())
+
+    fileWithMessages.writeInt(message.text.length)
+    fileWithMessages.write(message.text.toByteArray())
+
+    fileWithMessages.writeLong(message.info.messageID)
+    fileWithMessages.writeLong(message.info.timestamp)
+
+    fileWithMessages.write(message.info.twoBytesOfUserID.toInt() shr 8)
+    fileWithMessages.write(message.info.twoBytesOfUserID.toInt() shr 0)
+
+    fileWithMessages.write(message.sender)
+}
+
 /**
  * Read pointers from [fileWithIndex].
  *
  * From some position pointers can equal to -1,
  * which means that they are still uninitialized
- * so we should stop reading.
+ * so we should ignore them.
  */
 fun readPointers(fileWithIndex: RandomAccessFile, start: Long, maxNumberOfPointers: Int): MutableList<Long> {
     fileWithIndex.seek(start)
     val pointers = mutableListOf<Long>()
     for (i in 1..maxNumberOfPointers) {
         val pointer = fileWithIndex.readLong()
-        if (pointer < 0) break else pointers.add(pointer)
+        if (pointer < 0)
+            break
+        else
+            pointers.add(pointer)
     }
     return pointers
 }
@@ -78,22 +79,31 @@ fun writePointers(fileWithIndex: RandomAccessFile, start: Long, maxNumberOfPoint
 }
 
 /**
- * Move [pointers] in [fileWithIndex] to right.
+ * Move [pointers] to right.
  *
  * For example: 1 2 3 4 -> _ 1 2 3 4.
  * [start] defines the position of first pointer,
- * other go right after him.
+ * other go right after it.
  */
 fun movePointers(fileWithIndex: RandomAccessFile, start: Long, pointers: List<Long>) {
     for (i in pointers.size - 1 downTo 0)
         writeLong(fileWithIndex, start + (i + 1) * Long.SIZE_BYTES, pointers[i])
 }
 
+/**
+ * Fills [number] Long values with -1.
+ *
+ */
 fun deletePointers(fileWithIndex: RandomAccessFile, start: Long, number: Int) {
     fileWithIndex.seek(start)
     repeat(number) {
         fileWithIndex.writeLong(-1)
     }
+}
+
+fun readBoolean(fileWithIndex: RandomAccessFile, start: Long): Boolean {
+    fileWithIndex.seek(start)
+    return fileWithIndex.readBoolean()
 }
 
 /**
@@ -105,11 +115,28 @@ fun deletePointers(fileWithIndex: RandomAccessFile, start: Long, number: Int) {
 fun getNode(fileWithIndex: RandomAccessFile, start: Long, t: Int): Node {
     return Node(start,
         readPointers(fileWithIndex, start, 2 * t - 1),
-        fileWithIndex.readBoolean(),
+        readBoolean(fileWithIndex, start + (2 * t - 1) * Long.SIZE_BYTES),
         readPointers(fileWithIndex, fileWithIndex.filePointer, 2 * t))
 }
 
 fun writeLong(file: RandomAccessFile, start: Long, value: Long) {
     file.seek(start)
     file.writeLong(value)
+}
+
+fun printBTree(bTree: BTree, node: Node) {
+    println("There are ${node.pointersToMessages.size} messages in node ${node.positionInFile}")
+    for (pointerToMessage in node.pointersToMessages) {
+        val message = readMessage(bTree.fileWithMessages, pointerToMessage)
+        println(message.info.timestamp)
+    }
+    println("There are ${node.pointersToChildren.size} children in node ${node.positionInFile}")
+    for (pointerToChild in node.pointersToChildren) {
+        //val child = getNode(bTree.fileWithIndex, pointerToChild, bTree.t)
+        println(pointerToChild)
+    }
+
+    for (pointerToChild in node.pointersToChildren) {
+        printBTree(bTree, getNode(bTree.fileWithIndex, pointerToChild, bTree.t))
+    }
 }
