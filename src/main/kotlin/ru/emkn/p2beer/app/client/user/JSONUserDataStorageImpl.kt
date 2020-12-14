@@ -4,6 +4,9 @@ import com.google.gson.*
 import ru.emkn.p2beer.app.client.util.*
 import java.io.File
 
+//TODO: Create saving to binary
+// file and loading from binary file
+
 class JSONUserDataStorageImpl : UserDataStorage {
     override fun saveMyData(me: Account) {
         val jsonString = Gson().toJson(me)
