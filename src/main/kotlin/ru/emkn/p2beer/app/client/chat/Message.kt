@@ -1,17 +1,16 @@
 package ru.emkn.p2beer.app.client.chat
 
 import ru.emkn.p2beer.app.client.user.*
+import kotlin.Comparator
 
 data class Message(
         val text: String,
         val info: MessageId,
         val sender: PublicKey
 ) {
-
     override fun toString() = text
 
     operator fun compareTo(other: Message) : Int = this.info.compareTo(other.info)
-
 }
 
 data class MessageId (

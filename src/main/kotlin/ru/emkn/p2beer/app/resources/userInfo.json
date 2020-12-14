@@ -1,0 +1,37 @@
+{
+  "userInfo": {
+    "pubKey": {
+      "key": "14431896"
+    },
+    "userName": "KDizzled",
+    "lastName": 1607782708034,
+    "onlineStatus": false
+  },
+  "privateKey": {
+    "key": "88875205"
+  },
+  "friends": [
+    {
+      "userInfo": {
+        "pubKey": {
+          "key": "14431896"
+        },
+        "userName": "Mimimaxik",
+        "lastName": 1607782708034,
+        "onlineStatus": false
+      },
+      "isConnected": true
+    },
+    {
+      "userInfo": {
+        "pubKey": {
+          "key": "14431896"
+        },
+        "userName": "SmnTin",
+        "lastName": 1607782708034,
+        "onlineStatus": false
+      },
+      "isConnected": false
+    }
+  ]
+}

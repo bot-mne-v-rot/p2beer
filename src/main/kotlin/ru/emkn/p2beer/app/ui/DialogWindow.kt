@@ -2,13 +2,20 @@ package ru.emkn.p2beer.app.ui
 
 import com.googlecode.lanterna.TerminalSize
 import com.googlecode.lanterna.gui2.*
-import ru.emkn.p2beer.app.client.chat.ChatImpl
-import java.util.regex.Pattern
+import ru.emkn.p2beer.app.client.chat.*
+import ru.emkn.p2beer.app.client.user.PublicKey
+import ru.emkn.p2beer.app.client.util.*
+import kotlin.random.Random
+import kotlin.random.nextUInt
 
-class DialogWindow (private val info : ChatImpl) {
+class DialogWindow (
+    private val info : ChatImpl,
+
+) {
+
     fun addDialogWindow(
         actionListBox : ActionListBox,
-        textGUI : WindowBasedTextGUI,
+        textGUI : WindowBasedTextGUI
     ) {
 
         actionListBox.addItem(info.toString()) {
@@ -41,8 +48,18 @@ class DialogWindow (private val info : ChatImpl) {
                     LinearLayout.createLayoutData(LinearLayout.Alignment.Fill)
             )
 
+            val pk = PublicKey()
+            val uid = Random.nextUInt(0u, UShort.MAX_VALUE + 1u).toUShort()
+            val time = System.currentTimeMillis() - Random.nextInt(0, 5)
+            val info = MessageId(Random.nextLong(0, 5), time, uid)
+
             for (i in 1 until 30)
-                messages.addLine("$i.12.20                 Привет!")
+                messages.addLine(messageToString(Message("Lorem ipsum dolor sit amet, " +
+                        "consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna " +
+                        "aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip " +
+                        "ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse " +
+                        "cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, " +
+                        "sunt in culpa qui officia deserunt mollit anim id est laborum.", info, pk)))
 
             messages.setCaretPosition(messages.lineCount,0)
 
@@ -94,5 +111,16 @@ class DialogWindow (private val info : ChatImpl) {
             textGUI.addWindowAndWait(window)
 
         }
+    }
+
+    private fun messageToString (message : Message) : String {
+        //TODO: Optimize textBox to resize messages for proper width
+        return("""
+            |${timestampToDate(message)}
+            |   ${wrapText(50, message.text)}
+            |"""
+                .trimMargin()
+                )
+        //TODO: Change colors of field Sender and time
     }
 }

@@ -1,6 +1,8 @@
 package ru.emkn.p2beer.app.client.user
 
 import com.google.gson.annotations.SerializedName
+import java.text.SimpleDateFormat
+import java.util.*
 
 data class UserInfo (
     @SerializedName("pubKey") var pubKey: PublicKey,
