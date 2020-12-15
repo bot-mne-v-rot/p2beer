@@ -5,13 +5,19 @@ import com.googlecode.lanterna.gui2.*
 import com.googlecode.lanterna.gui2.dialogs.MessageDialog
 import com.googlecode.lanterna.gui2.dialogs.MessageDialogButton
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory
-import ru.emkn.p2beer.app.client.user.*
-import ru.emkn.p2beer.app.client.util.*
+import ru.emkn.p2beer.app.client.user.Account
+import ru.emkn.p2beer.app.client.user.JSONUserDataStorageImpl
+import ru.emkn.p2beer.app.client.user.UserInfo
+import ru.emkn.p2beer.app.client.util.defaultLastSeen
+import ru.emkn.p2beer.app.client.util.userInfoPath
 import java.io.File
 import java.io.IOException
-import java.lang.IllegalArgumentException
 import java.util.regex.Pattern
 import kotlin.random.Random
+
+/**
+ * Main entry point.
+ */
 
 fun main(args: Array<String>) {
 
@@ -25,7 +31,7 @@ fun main(args: Array<String>) {
          */
 
         try {
-            val mainW = MainWindow(checkIfLoggedIn())
+            val mainW = MainWindow(tryToParseUserData())
             mainW.runMainWindow()
         } catch (e: IllegalArgumentException) {
             e.printStackTrace()
@@ -183,7 +189,7 @@ fun performLogin() {
     }
 }
 
-fun checkIfLoggedIn () : Account {
+fun tryToParseUserData () : Account {
     val dataStorage = JSONUserDataStorageImpl()
     return dataStorage.loadMyData()
 }

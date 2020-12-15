@@ -92,7 +92,8 @@ fun addMessage(bTree: BTree, message: Message) {
 fun insertMessageInNonFull(bTree: BTree, node: Node, message: Message, pointerToMessage: Long) {
     val messagesInThisNode = getMessages(node, bTree.fileWithMessages)
 
-    var position = messagesInThisNode.binarySearch(message, MessageComparator) // index of first message that is newer
+    var position = messagesInThisNode.binarySearch(message, MessageComparator)
+    // index of first message that is newer
     position = -position - 1
 
     if (node.isLeaf) {
@@ -128,7 +129,9 @@ fun splitChild(bTree: BTree, node: Node, child: Node, id: Int): Node {
 
     val messagesOfNewNode = child.pointersToMessages.subList(bTree.t, child.pointersToMessages.size)
 
-    val childrenOfNewNode = if (child.isLeaf) mutableListOf<Long>() else child.pointersToChildren.subList(bTree.t, child.pointersToChildren.size)
+    val childrenOfNewNode = if
+                                    (child.isLeaf) mutableListOf<Long>() else child.pointersToChildren
+            .subList(bTree.t, child.pointersToChildren.size)
     val newNode = Node(bTree.fileWithIndex.length(),
         messagesOfNewNode,
         child.isLeaf,
@@ -136,8 +139,10 @@ fun splitChild(bTree: BTree, node: Node, child: Node, id: Int): Node {
         bTree.fileWithIndex,
         bTree.t)
 
-    movePointers(bTree.fileWithIndex, node.positionInFile + id * Long.SIZE_BYTES, // pointerToMiddleMessage goes on id position ->
-        node.pointersToMessages.subList(id, node.pointersToMessages.size)) // -> we should move all messages starting from id
+    movePointers(bTree.fileWithIndex, node.positionInFile + id * Long.SIZE_BYTES,
+            // pointerToMiddleMessage goes on id position ->
+        node.pointersToMessages.subList(id, node.pointersToMessages.size))
+    // -> we should move all messages starting from id
 
     val pointerToMiddleMessage = child.pointersToMessages[bTree.t - 1]
 
@@ -148,15 +153,19 @@ fun splitChild(bTree: BTree, node: Node, child: Node, id: Int): Node {
 
     val positionOfFirstChild = node.positionInFile + (2 * bTree.t - 1) * Long.SIZE_BYTES + 1
 
-    movePointers(bTree.fileWithIndex, positionOfFirstChild + (id + 1) * Long.SIZE_BYTES, // newNode goes on (id + 1) position ->
-        node.pointersToChildren.subList(id + 1, node.pointersToChildren.size)) // -> we should move all children starting from (id + 1)
+    movePointers(bTree.fileWithIndex, positionOfFirstChild + (id + 1) * Long.SIZE_BYTES,
+            // newNode goes on (id + 1) position ->
+        node.pointersToChildren.subList(id + 1, node.pointersToChildren.size))
+    // -> we should move all children starting from (id + 1)
 
     node.pointersToChildren.add(id + 1, newNode.positionInFile)
 
     writeLong(bTree.fileWithIndex, positionOfFirstChild + (id + 1) * Long.SIZE_BYTES, newNode.positionInFile)
 
-    deletePointers(bTree.fileWithIndex, child.positionInFile + (bTree.t - 1) * Long.SIZE_BYTES, bTree.t) // delete snd half of messages from child (they went to newNode)
-    deletePointers(bTree.fileWithIndex, child.positionInFile + (bTree.t * 3 - 1) * Long.SIZE_BYTES + 1, bTree.t) // delete snd half of children from child (they went to newNode)
+    deletePointers(bTree.fileWithIndex, child.positionInFile + (bTree.t - 1) * Long.SIZE_BYTES, bTree.t)
+    // delete snd half of messages from child (they went to newNode)
+    deletePointers(bTree.fileWithIndex, child.positionInFile + (bTree.t * 3 - 1) * Long.SIZE_BYTES + 1, bTree.t)
+    // delete snd half of children from child (they went to newNode)
 
     return node
 }
@@ -186,7 +195,8 @@ fun findMessages(bTree: BTree, node: Node, message: Message, k: Int, amountLeft:
         var indexOfGoodChild = 0
 
         if (amountLeft == k) {
-            var position = messagesInThisNode.binarySearch(message, MessageComparator) // index of first message that is newer
+            var position = messagesInThisNode.binarySearch(message, MessageComparator)
+            // index of first message that is newer
 
             if (position >= 0) {
                 messages.add(message)

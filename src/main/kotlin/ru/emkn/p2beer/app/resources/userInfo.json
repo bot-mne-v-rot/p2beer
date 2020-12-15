@@ -35,7 +35,7 @@
       1
     ],
     "userName": "KDizzled",
-    "lastName": 1252851728,
+    "lastSeen": 1252851728,
     "onlineStatus": true
   },
   "privateKey": [
@@ -110,10 +110,11 @@
           1
         ],
         "userName": "Mimimaxik",
-        "lastName": 1607745943667,
+        "lastSeen": 1607745943667,
         "onlineStatus": false
       },
-      "isConnected": true
+      "isConnected": true,
+      "messagesCount": 0
     },
     {
       "userInfo": {
@@ -152,10 +153,11 @@
           1
         ],
         "userName": "SmnTin",
-        "lastName": 1607745943667,
+        "lastSeen": 1607745943667,
         "onlineStatus": false
       },
-      "isConnected": false
+      "isConnected": false,
+      "messagesCount": 0
     }
   ]
 }
