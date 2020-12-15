@@ -5,9 +5,9 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 
-private val simpleDateFormat = SimpleDateFormat("dd MMMM, HH:mm", Locale.ENGLISH)
+val simpleDateFormat = SimpleDateFormat("dd MMMM, HH:mm", Locale.ENGLISH)
 
-fun timestampToDate (message: Message) : String = simpleDateFormat.format(message.info.timestamp * 1000L)
+fun timestampToDate (message: Message) : String = simpleDateFormat.format(Date(message.info.timestamp))
 
 fun wrapText(textviewWidth : Int, msg: String) : String {
     var temp = ""

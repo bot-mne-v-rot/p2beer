@@ -7,8 +7,7 @@ import ru.emkn.p2beer.app.client.user.*
 import ru.emkn.p2beer.app.client.util.timestampToDate
 import ru.emkn.p2beer.app.client.util.wrapText
 import java.io.File
-import kotlin.random.Random
-import kotlin.random.nextUInt
+import java.util.regex.Pattern
 
 class DialogWindow(
     private val openChat: ChatImpl,
@@ -58,24 +57,19 @@ class DialogWindow(
                     "src/main/kotlin/ru/emkn/p2beer/app/resources/chatlists/$openChat/messages.bin"
             )
 
-            val pk = Random.nextBytes(32)
-            val uid = Random.nextUInt(0u, UShort.MAX_VALUE + 1u).toUShort()
-            val time = System.currentTimeMillis() - Random.nextInt(0, 5)
-            val infoM = MessageId(Random.nextLong(0, 5), time, uid)
+            if (getNumberOfMessages(bTree) != 0) {
 
-            for (i in 1 until 30)
-                messages.addLine(
-                    messageToString(
-                        Message(
-                            "Lorem ipsum dolor sit amet, " +
-                                    "consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna " +
-                                    "aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip " +
-                                    "ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse " +
-                                    "cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, " +
-                                    "sunt in culpa qui officia deserunt mollit anim id est laborum.", infoM, pk
-                        )
-                    )
+                val messageList = getKLastMessages(
+                        bTree,
+                        minOf(getNumberOfMessages(bTree), 20)
                 )
+
+                for (message in messageList.reversed()) {
+                    messages.addLine(messageToString(message))
+                }
+            }
+
+            //messages.setValidationPattern(Pattern.compile("/(?:)/"))
 
             messages.setCaretPosition(messages.lineCount, 0)
 
@@ -112,7 +106,8 @@ class DialogWindow(
             bottomMessageInputBox.addComponent(messageField)
 
             val sendBtn = Button("Send") {
-                sendMessage(bTree, createMessage(messageField.text))
+                val msg = createMessage(messageField.text)
+                sendMessage(bTree, msg, messages, messageField)
             }
 
             bottomMessageInputBox.addComponent(
@@ -142,9 +137,6 @@ class DialogWindow(
 
                 for (friend in me.friends) {
                     if (friend.userInfo.pubKey.contentEquals(openChat.friend.userInfo.pubKey)) {
-                        println(openChat.friend.lastMessageTimeStamp)
-                        println( openChat.friend.messagesCount)
-
                         friend.lastMessageTimeStamp = openChat.friend.lastMessageTimeStamp
                         friend.messagesCount = openChat.friend.messagesCount
                     }
@@ -175,6 +167,8 @@ class DialogWindow(
                 .trimMargin()
                 )
         //TODO: Change colors of field Sender and time
+
+        //TODO: add author to the shown message
     }
 
     private fun createMessage(message: String) : Message {
@@ -188,7 +182,11 @@ class DialogWindow(
         return Message(message, info, pk)
     }
 
-    private fun sendMessage(bTree: BTree, message: Message) {
+    private fun sendMessage(bTree: BTree,
+                            message: Message,
+                            messages: TextBox,
+                            messageField: TextBox
+    ) {
         /**
          * Send message
          */
@@ -213,6 +211,30 @@ class DialogWindow(
          */
 
         openChat.friend.messagesCount += 1
+
+        /**
+         * The ability of modifying the textField
+         * with messages is blocked by default, so we
+         * disable it for the time of adding a new
+         * message
+         */
+
+        //messages.setValidationPattern(Pattern.compile("."))
+
+        /**
+         * Show this message
+         * as new in chat
+         */
+
+        messages.addLine(messageToString(message))
+        messages.setCaretPosition(messages.lineCount, 0)
+        messageField.text = ""
+
+        /**
+         * And block it again
+         */
+
+        //messages.setValidationPattern(Pattern.compile("/(?:)/"))
     }
 }
 
