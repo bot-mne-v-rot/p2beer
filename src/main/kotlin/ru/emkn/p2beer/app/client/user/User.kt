@@ -36,5 +36,40 @@ data class Account(
 data class Friend (
     @SerializedName("userInfo") val userInfo: UserInfo,
     @SerializedName("isConnected") var isConnection: Boolean,
-    @SerializedName("messagesCount") var messagesCount: Int
-)
+    @SerializedName("messagesCount") var messagesCount: Int,
+    @SerializedName("lastMessageTimeStamp") var lastMessageTimeStamp: Long
+) {
+    operator fun compareTo(other: Friend) : Int {
+
+        /**
+         * Friends are compared by the timestamp of the last message
+         * We need it to sort dialogs with friends by freshness
+         * @return 1 if the dialog with a friend updated later
+         * than the dialog with a friend passed in
+         * @param other
+         * Otherwise
+         * @return -1
+         */
+
+        return when {
+            this.lastMessageTimeStamp > other.lastMessageTimeStamp -> -1
+            this.lastMessageTimeStamp < other.lastMessageTimeStamp -> 1
+            else -> 0
+        }
+    }
+}
+
+class FriendComparator {
+
+    companion object : Comparator<Friend?> {
+
+        override fun compare(o1: Friend?, o2: Friend?) : Int {
+            return when {
+                (o1 == o2) -> 0
+                (o1 == null) -> -1
+                (o2 == null) -> 1
+                else -> o1.compareTo(o2)
+            }
+        }
+    }
+}
