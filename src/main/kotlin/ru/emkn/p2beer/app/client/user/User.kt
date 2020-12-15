@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName
 data class Account(
     @SerializedName("userInfo") val userInfo: UserInfo,
     @SerializedName("privateKey") val privateKey: ByteArray,
-    @SerializedName("friends") val friends: Set<Friend>
+    @SerializedName("friends") var friends: Set<Friend>
 ) {
 
     /**
@@ -36,7 +36,7 @@ data class Account(
 data class Friend (
     @SerializedName("userInfo") val userInfo: UserInfo,
     @SerializedName("isConnected") var isConnection: Boolean,
-    @SerializedName("messagesCount") var messagesCount: Int,
+    @SerializedName("messagesCount") var messagesCount: Long,
     @SerializedName("lastMessageTimeStamp") var lastMessageTimeStamp: Long
 ) {
     operator fun compareTo(other: Friend) : Int {

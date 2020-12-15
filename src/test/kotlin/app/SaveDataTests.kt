@@ -18,10 +18,10 @@ class SaveDataTests {
         val friendInfo2 = UserInfo(pk, "SmnTin", lastSeen, false)
 
         val friend1 = Friend(friendInfo1, true,
-                Random.nextInt(0, 100000),
+                Random.nextLong(0, 100000),
                 Random.nextLong(0, 100000))
         val friend2 = Friend(friendInfo2, false,
-                Random.nextInt(0, 100000),
+                Random.nextLong(0, 100000),
                 Random.nextLong(0, 100000))
 
         val me = Account(userInfo, pr, setOf(friend1, friend2))

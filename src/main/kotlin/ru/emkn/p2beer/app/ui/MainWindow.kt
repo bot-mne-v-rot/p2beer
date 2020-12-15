@@ -6,6 +6,9 @@ import com.googlecode.lanterna.gui2.*
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory
 import ru.emkn.p2beer.app.client.chat.ChatImpl
 import ru.emkn.p2beer.app.client.user.Account
+import ru.emkn.p2beer.app.client.user.FriendComparator
+import ru.emkn.p2beer.app.client.user.FriendsManager
+import ru.emkn.p2beer.app.p2bLib.FriendsManagerImpl
 import java.io.IOException
 
 class MainWindow (private val me: Account) {
@@ -20,7 +23,6 @@ class MainWindow (private val me: Account) {
             val textGUI: WindowBasedTextGUI = MultiWindowTextGUI(screen, TextColor.ANSI.CYAN)
 
             val window: Window = BasicWindow("Dialog Window")
-            //window.setHints(listOf(Window.Hint.EXPANDED));
 
             /**
              * Creating a Panel with a BorderLayout
@@ -58,11 +60,25 @@ class MainWindow (private val me: Account) {
              * and align them around it
              */
 
-            val actionListBox = ActionListBox(TerminalSize(20, 10))
+            /**
+             * Create an instance of the [FriendsManager]
+             */
 
+            val friendsManager = FriendsManagerImpl()
+
+            val actionListBox = ActionListBox(TerminalSize(20, 10))
             var chat : DialogWindow
-            for (friend in me.friends) {
-                chat = DialogWindow(ChatImpl(friend), me)
+            for (friend in me.friends.sortedWith(FriendComparator)) {
+
+                /**
+                 * Get connection to friend via FriendsManager
+                 */
+
+                chat = DialogWindow(
+                        ChatImpl(friend),
+                        me,
+                        friendsManager.getConnectionTo(friend)
+                )
                 chat.addDialogWindow(actionListBox, textGUI)
             }
 

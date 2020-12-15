@@ -16,7 +16,7 @@ private fun createFriend() : Friend {
 
     val uInfo = UserInfo(pk, userName, time, onlineStatus)
 
-    val messageCount = Random.nextInt(0,1000)
+    val messageCount = Random.nextLong(0,1000)
     val isConnected = Random.nextBoolean()
     val lastMTime = Random.nextLong(0,1000)
 

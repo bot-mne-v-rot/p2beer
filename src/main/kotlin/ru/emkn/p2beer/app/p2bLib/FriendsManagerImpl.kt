@@ -2,9 +2,10 @@ package ru.emkn.p2beer.app.p2bLib
 
 import ru.emkn.p2beer.app.client.user.*
 
-class FriendsManagerImpl (
-    override var allFriendsConnected: Boolean
-) : FriendsManager {
+class FriendsManagerImpl  : FriendsManager {
+
+    override var allFriendsConnected: Boolean = false
+
     override fun addFriend(userId: ByteArray): Friend {
         TODO("Not yet implemented")
     }
@@ -14,10 +15,11 @@ class FriendsManagerImpl (
     }
 
     override fun getConnectionTo(friend: Friend): FriendConnection {
-        TODO("Not yet implemented")
+        return FriendConnection()
     }
 
     override fun connectAll(friends: Set<Friend>) {
+        allFriendsConnected = true
         TODO("Not yet implemented")
     }
 

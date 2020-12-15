@@ -8,7 +8,6 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory
 import ru.emkn.p2beer.app.client.user.Account
 import ru.emkn.p2beer.app.client.user.JSONUserDataStorageImpl
 import ru.emkn.p2beer.app.client.user.UserInfo
-import ru.emkn.p2beer.app.client.util.defaultLastSeen
 import ru.emkn.p2beer.app.client.util.userInfoPath
 import java.io.File
 import java.io.IOException
@@ -109,13 +108,16 @@ fun performLogin() {
 
                 /**
                  * Here we take entered username,
-                 * generated [PublicKey] and
+                 * generated PublicKey and create a new account
                  */
+
+                //TODO: Generate normal PublicKey,
+                // not the random one
 
                 val info = UserInfo(
                         Random.nextBytes(32),
                         usernameField.text,
-                        defaultLastSeen,
+                        System.currentTimeMillis(),
                         true
                 )
 

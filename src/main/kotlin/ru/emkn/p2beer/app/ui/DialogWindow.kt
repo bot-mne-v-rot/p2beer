@@ -3,8 +3,7 @@ package ru.emkn.p2beer.app.ui
 import com.googlecode.lanterna.TerminalSize
 import com.googlecode.lanterna.gui2.*
 import ru.emkn.p2beer.app.client.chat.*
-import ru.emkn.p2beer.app.client.user.Account
-import ru.emkn.p2beer.app.client.user.UserInfo
+import ru.emkn.p2beer.app.client.user.*
 import ru.emkn.p2beer.app.client.util.timestampToDate
 import ru.emkn.p2beer.app.client.util.wrapText
 import java.io.File
@@ -12,8 +11,9 @@ import kotlin.random.Random
 import kotlin.random.nextUInt
 
 class DialogWindow(
-    private val info: ChatImpl,
-    private val me: Account
+    private val openChat: ChatImpl,
+    private val me: Account,
+    private val friendConnection: FriendConnection
     ) {
 
     fun addDialogWindow(
@@ -21,7 +21,7 @@ class DialogWindow(
         textGUI: WindowBasedTextGUI
     ) {
 
-        actionListBox.addItem(info.toString()) {
+        actionListBox.addItem(openChat.toString()) {
             val window: Window = BasicWindow("Dialog Window")
             window.setHints(listOf(Window.Hint.EXPANDED))
 
@@ -41,7 +41,7 @@ class DialogWindow(
             chatPanel.layoutManager = BorderLayout()
 
             mainPanel.addComponent(
-                chatPanel.withBorder(Borders.doubleLineBevel(info.toString()))
+                chatPanel.withBorder(Borders.doubleLineBevel(openChat.toString()))
                     .setLayoutData(BorderLayout.Location.CENTER)
             )
 
@@ -51,11 +51,11 @@ class DialogWindow(
                 LinearLayout.createLayoutData(LinearLayout.Alignment.Fill)
             )
 
-            checkIfChatRegistered(info.toString())
+            checkIfChatRegistered(openChat.toString())
 
             val bTree = BTree(5,
-                    "src/main/kotlin/ru/emkn/p2beer/app/resources/chatlists/$info/index.bin",
-                    "src/main/kotlin/ru/emkn/p2beer/app/resources/chatlists/$info/messages.bin"
+                    "src/main/kotlin/ru/emkn/p2beer/app/resources/chatlists/$openChat/index.bin",
+                    "src/main/kotlin/ru/emkn/p2beer/app/resources/chatlists/$openChat/messages.bin"
             )
 
             val pk = Random.nextBytes(32)
@@ -112,19 +112,7 @@ class DialogWindow(
             bottomMessageInputBox.addComponent(messageField)
 
             val sendBtn = Button("Send") {
-
-                /**
-                 * Send message
-                 */
-
-                // TODO: add call of the function that sends a message
-                //  and save the message on success
-
-                /**
-                 * Save message
-                 */
-
-                addMessage(bTree, createMessage(messageField.text))
+                sendMessage(bTree, createMessage(messageField.text))
             }
 
             bottomMessageInputBox.addComponent(
@@ -142,8 +130,32 @@ class DialogWindow(
                 bottomMessageInputBox.setLayoutData(BorderLayout.Location.BOTTOM)
             )
 
+            val button = Button("Close") {
+
+                /**
+                 * Update data about Friend's last message
+                 * TODO: Handle situations when the window
+                 *  is closed not properly
+                 */
+
+                val dataStorage = JSONUserDataStorageImpl()
+
+                for (friend in me.friends) {
+                    if (friend.userInfo.pubKey.contentEquals(openChat.friend.userInfo.pubKey)) {
+                        println(openChat.friend.lastMessageTimeStamp)
+                        println( openChat.friend.messagesCount)
+
+                        friend.lastMessageTimeStamp = openChat.friend.lastMessageTimeStamp
+                        friend.messagesCount = openChat.friend.messagesCount
+                    }
+                }
+
+                dataStorage.saveMyData(me)
+                window.close()
+            }
+
             mainPanel.addComponent(
-                Button("Close", window::close).setLayoutData(
+                button.setLayoutData(
                     GridLayout.createHorizontallyEndAlignedLayoutData(2)
                 ).setLayoutData(BorderLayout.Location.BOTTOM)
             )
@@ -169,10 +181,38 @@ class DialogWindow(
         val pk = me.userInfo.pubKey
         val twoBytesOfUserID : UShort = (pk[pk.size - 1] + pk[pk.size - 2]).toUShort()
         val info = MessageId(
-            1,
-            System.currentTimeMillis(),
-            twoBytesOfUserID)
+                openChat.friend.messagesCount + 1,
+                System.currentTimeMillis(),
+                twoBytesOfUserID
+        )
         return Message(message, info, pk)
+    }
+
+    private fun sendMessage(bTree: BTree, message: Message) {
+        /**
+         * Send message
+         */
+
+        // TODO: add call of the function that sends a message
+        //  and save the message on success
+
+        /**
+         * Save message to file
+         */
+
+        addMessage(bTree, message)
+
+        /**
+         * Update the time of the last message in the
+         */
+
+        openChat.friend.lastMessageTimeStamp = System.currentTimeMillis()
+
+        /**
+         * Update amount of messages sent to this friend
+         */
+
+        openChat.friend.messagesCount += 1
     }
 }
 
@@ -181,3 +221,4 @@ fun checkIfChatRegistered(userName: String) {
     if (!File(folderName).exists())
         File(folderName).mkdirs()
 }
+
