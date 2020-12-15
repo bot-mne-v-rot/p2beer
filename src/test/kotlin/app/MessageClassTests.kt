@@ -2,7 +2,6 @@ package app
 
 import org.junit.jupiter.api.Test
 import ru.emkn.p2beer.app.client.chat.*
-import ru.emkn.p2beer.app.client.user.PublicKey
 import kotlin.random.Random
 import kotlin.random.nextUInt
 import kotlin.test.assertEquals
@@ -10,7 +9,7 @@ import kotlin.test.assertEquals
 class MessageClassTests {
     @Test
     fun `check message comparator`() {
-        val pk = PublicKey()
+        val pk = Random.nextBytes(32)
 
         var time : Long
         var uid : UShort

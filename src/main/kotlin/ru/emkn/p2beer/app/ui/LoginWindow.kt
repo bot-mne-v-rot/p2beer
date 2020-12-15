@@ -11,6 +11,7 @@ import java.io.File
 import java.io.IOException
 import java.lang.IllegalArgumentException
 import java.util.regex.Pattern
+import kotlin.random.Random
 
 fun main(args: Array<String>) {
 
@@ -106,13 +107,13 @@ fun performLogin() {
                  */
 
                 val info = UserInfo(
-                        PublicKey(),
+                        Random.nextBytes(32),
                         usernameField.text,
                         defaultLastSeen,
                         true
                 )
 
-                val me = Account(info, PrivateKey(), setOf())
+                val me = Account(info, Random.nextBytes(32), setOf())
                 MessageDialog.showMessageDialog(
                         textGUI,
                         "Hi, ${usernameField.text}",

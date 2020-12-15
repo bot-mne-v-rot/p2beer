@@ -5,11 +5,11 @@ import ru.emkn.p2beer.app.client.user.*
 class FriendsManagerImpl (
     override var allFriendsConnected: Boolean
 ) : FriendsManager {
-    override fun addFriend(userId: PublicKey): Friend {
+    override fun addFriend(userId: ByteArray): Friend {
         TODO("Not yet implemented")
     }
 
-    override fun removeFriend(userId: PublicKey) {
+    override fun removeFriend(userId: ByteArray) {
         TODO("Not yet implemented")
     }
 

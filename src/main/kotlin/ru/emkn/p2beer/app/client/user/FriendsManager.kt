@@ -3,9 +3,9 @@ package ru.emkn.p2beer.app.client.user
 interface FriendsManager {
     var allFriendsConnected : Boolean
 
-    fun addFriend (userId : PublicKey) : Friend
+    fun addFriend (userId : ByteArray) : Friend
 
-    fun removeFriend (userId : PublicKey)
+    fun removeFriend (userId : ByteArray)
 
     fun getConnectionTo (friend : Friend) : FriendConnection
 

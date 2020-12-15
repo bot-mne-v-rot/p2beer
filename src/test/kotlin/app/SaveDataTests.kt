@@ -2,12 +2,13 @@ package app
 
 import org.junit.jupiter.api.Test
 import ru.emkn.p2beer.app.client.user.*
+import kotlin.random.Random
 
 class SaveDataTests {
     @Test
     fun `account data save test`() {
-        val pk = PublicKey()
-        val pr = PrivateKey()
+        val pk = Random.nextBytes(32)
+        val pr = Random.nextBytes(32)
 
         val lastSeen = System.currentTimeMillis()
         val userInfo = UserInfo(pk, "KDizzled", lastSeen, false)

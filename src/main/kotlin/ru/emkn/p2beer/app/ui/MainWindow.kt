@@ -62,7 +62,7 @@ class MainWindow (private val me: Account) {
 
             var chat : DialogWindow
             for (friend in me.friends) {
-                chat = DialogWindow(ChatImpl(friend.userInfo.userName))
+                chat = DialogWindow(ChatImpl(friend.userInfo.userName), me)
                 chat.addDialogWindow(actionListBox, textGUI)
             }
 
