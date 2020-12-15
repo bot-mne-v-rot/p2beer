@@ -108,20 +108,40 @@ fun readBoolean(fileWithIndex: RandomAccessFile, start: Long): Boolean {
 
 /**
  * Starting with [start] position in [fileWithIndex] we have our node:
- *  -> 2[t] - 1 Long values - pointers to messages
+ *  -> 2 * t - 1 Long values - pointers to messages
  *  -> one Boolean values - isLeaf
- *  -> 2[t] Long values - pointers to children.
+ *  -> 2 * t Long values - pointers to children.
  */
-fun getNode(fileWithIndex: RandomAccessFile, start: Long, t: Int): Node {
+fun getNode(bTree: BTree, start: Long): Node {
     return Node(start,
-        readPointers(fileWithIndex, start, 2 * t - 1),
-        readBoolean(fileWithIndex, start + (2 * t - 1) * Long.SIZE_BYTES),
-        readPointers(fileWithIndex, fileWithIndex.filePointer, 2 * t))
+        readPointers(bTree.fileWithIndex, start, 2 * bTree.t - 1),
+        readBoolean(bTree.fileWithIndex, start + (2 * bTree.t - 1) * Long.SIZE_BYTES),
+        readPointers(bTree.fileWithIndex, bTree.fileWithIndex.filePointer, 2 * bTree.t))
+}
+
+fun getRoot(bTree: BTree): Node = getNode(bTree, 0)
+
+fun swapNodes(fileWithIndex: RandomAccessFile, node1: Node, node2: Node, t: Int) {
+    val position1 = node1.positionInFile
+    val position2 = node2.positionInFile
+
+    writePointers(fileWithIndex, position1, 2 * t - 1, node2.pointersToMessages)
+    fileWithIndex.writeBoolean(node2.isLeaf)
+    writePointers(fileWithIndex, fileWithIndex.filePointer, 2 * t, node2.pointersToChildren)
+
+    writePointers(fileWithIndex, position2, 2 * t - 1, node1.pointersToMessages)
+    fileWithIndex.writeBoolean(node1.isLeaf)
+    writePointers(fileWithIndex, fileWithIndex.filePointer, 2 * t, node1.pointersToChildren)
 }
 
 fun writeLong(file: RandomAccessFile, start: Long, value: Long) {
     file.seek(start)
     file.writeLong(value)
+}
+
+fun writeInt(file: RandomAccessFile, start: Long, value: Int) {
+    file.seek(start)
+    file.writeInt(value)
 }
 
 fun printBTree(bTree: BTree, node: Node) {
@@ -132,11 +152,10 @@ fun printBTree(bTree: BTree, node: Node) {
     }
     println("There are ${node.pointersToChildren.size} children in node ${node.positionInFile}")
     for (pointerToChild in node.pointersToChildren) {
-        //val child = getNode(bTree.fileWithIndex, pointerToChild, bTree.t)
         println(pointerToChild)
     }
 
     for (pointerToChild in node.pointersToChildren) {
-        printBTree(bTree, getNode(bTree.fileWithIndex, pointerToChild, bTree.t))
+        printBTree(bTree, getNode(bTree, pointerToChild))
     }
 }

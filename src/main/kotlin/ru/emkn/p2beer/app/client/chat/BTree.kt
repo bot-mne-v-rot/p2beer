@@ -9,19 +9,27 @@ import java.io.RandomAccessFile
  * @property t parameter of tree (each node contains maximum (2 * t - 1) messages)
  * @property pathToFileWithIndex path to file where index of tree will be stored (all information about nodes)
  * @property pathToFileWithMessages path to binary file where messages will be stored
+ *
+ * To create an instance: val bTree = BTree(pathToFileWithIndex = "...", pathToFileWithMessages = "...")
  */
-class BTree(val t: Int,
+class BTree(val t: Int = 5,
             private val pathToFileWithIndex: String,
             private val pathToFileWithMessages: String) {
 
-    val fileWithIndex: RandomAccessFile = RandomAccessFile(File(pathToFileWithIndex), "rw")
-    val fileWithMessages: RandomAccessFile = RandomAccessFile(File(pathToFileWithMessages), "rw")
-    var pointerToRoot: Long = 0
+    private val exists = File(pathToFileWithIndex).exists()
+
+    val fileWithIndex = RandomAccessFile(File(pathToFileWithIndex), "rw")
+    val fileWithMessages = RandomAccessFile(File(pathToFileWithMessages), "rw")
 
     init {
-        fileWithMessages.setLength(0)
-        fileWithIndex.setLength(0)
-        Node(pointerToRoot, mutableListOf(), true, mutableListOf(), fileWithIndex, t)
+        if (exists) {
+            fileWithIndex.seek(fileWithIndex.length())
+            fileWithMessages.seek(fileWithMessages.length())
+        }
+        else {
+            fileWithIndex.writeInt(0) // last 4 bytes store number of messages in BTree
+            Node(0, mutableListOf(), true, mutableListOf(), this)
+        }
     }
 }
 
@@ -37,7 +45,7 @@ class BTree(val t: Int,
  * 1 byte for isLeaf and (2 * t) bytes for pointers to children.
  * Then it fills some of these bytes with actual information.
  */
-class Node(val positionInFile: Long,
+class Node(var positionInFile: Long,
            val pointersToMessages: MutableList<Long>,
            var isLeaf: Boolean,
            val pointersToChildren: MutableList<Long>) {
@@ -46,12 +54,15 @@ class Node(val positionInFile: Long,
                 pointersToMessages: MutableList<Long>,
                 isLeaf: Boolean,
                 pointersToChildren: MutableList<Long>,
-                fileWithIndex: RandomAccessFile,
-                t: Int) : this(positionInFile, pointersToMessages, isLeaf, pointersToChildren) {
+                bTree: BTree) : this(positionInFile, pointersToMessages, isLeaf, pointersToChildren) {
 
-        writePointers(fileWithIndex, positionInFile, 2 * t - 1, pointersToMessages)
-        fileWithIndex.writeBoolean(isLeaf)
-        writePointers(fileWithIndex, fileWithIndex.filePointer, 2 * t, pointersToChildren)
+        val currentNumberOfMessages = getNumberOfMessages(bTree) // it will be overwritten by new Node
+
+        writePointers(bTree.fileWithIndex, positionInFile, 2 * bTree.t - 1, pointersToMessages)
+        bTree.fileWithIndex.writeBoolean(isLeaf)
+        writePointers(bTree.fileWithIndex, bTree.fileWithIndex.filePointer, 2 * bTree.t, pointersToChildren)
+
+        bTree.fileWithIndex.writeInt(currentNumberOfMessages)
     }
 }
 
@@ -62,165 +73,45 @@ fun addMessage(bTree: BTree, message: Message) {
     val pointerToMessage = bTree.fileWithMessages.length()
     writeMessage(bTree.fileWithMessages, message)
 
-    val root = getNode(bTree.fileWithIndex, bTree.pointerToRoot, bTree.t)
+    val numberOfMessages = getNumberOfMessages(bTree)
+    writeInt(bTree.fileWithIndex, bTree.fileWithIndex.length() - Int.SIZE_BYTES, numberOfMessages + 1)
+
+    val root = getRoot(bTree)
 
     if (root.pointersToMessages.size == bTree.t * 2 - 1) { // root is full -> create new root and split old root
-        var newRoot = Node(bTree.fileWithIndex.length(),
+        var newRoot = Node(bTree.fileWithIndex.length() - Int.SIZE_BYTES,
             mutableListOf(),
             false,
             mutableListOf(root.positionInFile),
-            bTree.fileWithIndex,
-            bTree.t)
-
-        val checkNewRoot = getNode(bTree.fileWithIndex, newRoot.positionInFile, bTree.t)
+            bTree)
 
         val realNewRoot = splitChild(bTree, newRoot, root, 0)
-        bTree.pointerToRoot = realNewRoot.positionInFile
+        val updatedRoot = getRoot(bTree)                                // just
+        realNewRoot.pointersToChildren[0] = realNewRoot.positionInFile         // magic
+
+        swapNodes(bTree.fileWithIndex, updatedRoot, realNewRoot, bTree.t) // root always must be first in file -> swap old root and new root
+        realNewRoot.positionInFile = 0 // it's new root
+
         insertMessageInNonFull(bTree, realNewRoot, message, pointerToMessage)
     }
     else
         insertMessageInNonFull(bTree, root, message, pointerToMessage)
 }
 
-/**
- * Inserts [message] in [node].
- *
- * It's guaranteed that [node] isn't full.
- * If [node] is leaf then adds [pointerToMessage] to [node].pointersToMessages.
- * Otherwise determines appropriate child and calls function from this child.
- */
-fun insertMessageInNonFull(bTree: BTree, node: Node, message: Message, pointerToMessage: Long) {
-    val messagesInThisNode = getMessages(node, bTree.fileWithMessages)
+fun getKNextMessages(bTree: BTree, message: Message, k: Int): List<Message> =
+    findKNextMessages(bTree, getRoot(bTree), message, k, k)
 
-    var position = messagesInThisNode.binarySearch(message, MessageComparator) // index of first message that is newer
-    position = -position - 1
 
-    if (node.isLeaf) {
-        movePointers(bTree.fileWithIndex, node.positionInFile + position * Long.SIZE_BYTES,
-            node.pointersToMessages.subList(position, node.pointersToMessages.size))
+fun getKPreviousMessages(bTree: BTree, message: Message, k: Int): List<Message> =
+    findKPreviousMessages(bTree, getRoot(bTree), message, k, k)
 
-        writeLong(bTree.fileWithIndex, node.positionInFile + position * Long.SIZE_BYTES, pointerToMessage)
-    }
-    else {
-        val childNode = getNode(bTree.fileWithIndex, node.pointersToChildren[position], bTree.t)
 
-        if (childNode.pointersToMessages.size == 2 * bTree.t - 1) { // childNode is full -> split it into 2
-            val updatedNode = splitChild(bTree, node, childNode, position)
-            insertMessageInNonFull(bTree, updatedNode, message, pointerToMessage)
-        }
-        else
-            insertMessageInNonFull(bTree, childNode, message, pointerToMessage)
-    }
+fun getNumberOfMessages(bTree: BTree): Int {
+    bTree.fileWithIndex.seek(bTree.fileWithIndex.length() - Int.SIZE_BYTES)
+    return bTree.fileWithIndex.readInt()
 }
 
-/**
- * Splits full [child] into 2 nodes: first half of [child] and newNode.
- *
- * Leaves first (t - 1) messages and t children in [child].
- * Adds last (t - 1) messages and t children into newNode.
- * Inserts pointerToMiddleMessage and newNode into [node].
- *
- * @return pointerToMiddleMessage and newNode
- * It is necessary because after applying function
- * node contains old information.
- */
-fun splitChild(bTree: BTree, node: Node, child: Node, id: Int): Node {
+fun getKLastMessages(bTree: BTree, k: Int): List <Message> =
+    getKPreviousMessages(bTree, getLastMessage(bTree), k)
 
-    val messagesOfNewNode = child.pointersToMessages.subList(bTree.t, child.pointersToMessages.size)
-
-    val childrenOfNewNode = if (child.isLeaf) mutableListOf<Long>() else child.pointersToChildren.subList(bTree.t, child.pointersToChildren.size)
-    val newNode = Node(bTree.fileWithIndex.length(),
-        messagesOfNewNode,
-        child.isLeaf,
-        childrenOfNewNode,
-        bTree.fileWithIndex,
-        bTree.t)
-
-    movePointers(bTree.fileWithIndex, node.positionInFile + id * Long.SIZE_BYTES, // pointerToMiddleMessage goes on id position ->
-        node.pointersToMessages.subList(id, node.pointersToMessages.size)) // -> we should move all messages starting from id
-
-    val pointerToMiddleMessage = child.pointersToMessages[bTree.t - 1]
-
-    node.pointersToMessages.add(id, pointerToMiddleMessage)
-
-    writeLong(bTree.fileWithIndex, node.positionInFile + id * Long.SIZE_BYTES,
-        pointerToMiddleMessage)
-
-    val positionOfFirstChild = node.positionInFile + (2 * bTree.t - 1) * Long.SIZE_BYTES + 1
-
-    movePointers(bTree.fileWithIndex, positionOfFirstChild + (id + 1) * Long.SIZE_BYTES, // newNode goes on (id + 1) position ->
-                    node.pointersToChildren.subList(id + 1, node.pointersToChildren.size)) // -> we should move all children starting from (id + 1)
-
-    node.pointersToChildren.add(id + 1, newNode.positionInFile)
-
-    writeLong(bTree.fileWithIndex, positionOfFirstChild + (id + 1) * Long.SIZE_BYTES, newNode.positionInFile)
-
-    deletePointers(bTree.fileWithIndex, child.positionInFile + (bTree.t - 1) * Long.SIZE_BYTES, bTree.t) // delete snd half of messages from child (they went to newNode)
-    deletePointers(bTree.fileWithIndex, child.positionInFile + (bTree.t * 3 - 1) * Long.SIZE_BYTES + 1, bTree.t) // delete snd half of children from child (they went to newNode)
-
-    return node
-}
-
-fun getKMessages(bTree: BTree, message: Message, k: Int): List<Message> {
-    val root = getNode(bTree.fileWithIndex, bTree.pointerToRoot, bTree.t)
-    return findMessages(bTree, root, message, k, k)
-}
-
-fun findMessages(bTree: BTree, node: Node, message: Message, k: Int, amountLeft: Int): List<Message> {
-    if (amountLeft <= 0)
-        return listOf()
-    val messagesInThisNode = getMessages(node, bTree.fileWithMessages)
-
-    val messages = mutableListOf<Message>()
-
-    if (node.isLeaf) {
-        var position = messagesInThisNode.binarySearch(message, MessageComparator)
-
-        if (position < 0)
-            position = -position - 1
-
-        return messagesInThisNode.subList(position,
-            position + minOf(messagesInThisNode.size - position, amountLeft))
-    }
-    else {
-        var indexOfGoodChild = 0
-
-        if (amountLeft == k) {
-            var position = messagesInThisNode.binarySearch(message, MessageComparator) // index of first message that is newer
-
-            if (position >= 0) {
-                messages.add(message)
-            }
-            else {
-                position = -position - 1
-
-                val childNode = getNode(bTree.fileWithIndex, node.pointersToChildren[position], bTree.t)
-
-                messages += findMessages(bTree, childNode, message, k, amountLeft)
-
-                if (messages.size < k && position < messagesInThisNode.size)
-                    messages.add(messagesInThisNode[position])
-            }
-
-            if (messages.size == k)
-                return messages
-            else
-                indexOfGoodChild = position + 1
-        }
-
-        for (index in indexOfGoodChild until node.pointersToChildren.size) {
-            val pointer = node.pointersToChildren[index]
-            val child = getNode(bTree.fileWithIndex, pointer, bTree.t)
-
-            messages += findMessages(bTree, child, message, k, amountLeft - messages.size)
-
-            if (messages.size < amountLeft && index != node.pointersToChildren.lastIndex)
-                messages.add(messagesInThisNode[index])
-
-            if (messages.size == amountLeft)
-                break
-        }
-    }
-
-    return messages
-}
+fun getLastMessage(bTree: BTree): Message = findLastMessage(bTree, getRoot(bTree))
