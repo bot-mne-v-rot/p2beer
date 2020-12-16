@@ -12,6 +12,10 @@ data class TransportDescriptor(val name: Name, val traits: Set<Trait>)
 
 typealias Endpoint = String
 
+interface ConnectionStrategy {
+    suspend fun connect(endpoint: Endpoint)
+}
+
 abstract class Transport {
     abstract val descriptor: TransportDescriptor
 
@@ -49,4 +53,19 @@ abstract class Transport {
      * @throws IllegalStateException
      */
     abstract suspend fun connect(endpoint: Endpoint)
+
+    open var defaultStrategy: ConnectionStrategy =
+        object : ConnectionStrategy {
+            override suspend fun connect(endpoint: Endpoint) {
+                this@Transport.connect(endpoint)
+            }
+        }
+
+    open suspend fun connectWithStrategy(endpoint: Endpoint, strategy: ConnectionStrategy) {
+        strategy.connect(endpoint)
+    }
+
+    suspend fun connectWithDefaultStrategy(endpoint: Endpoint) {
+        connectWithStrategy(endpoint, defaultStrategy)
+    }
 }

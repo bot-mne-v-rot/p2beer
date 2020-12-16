@@ -23,11 +23,13 @@ internal class ContCompletionHandler<T> : CompletionHandler<T, CancellableContin
 
 internal class TCPSocket(val channel: AsynchronousSocketChannel = AsynchronousSocketChannel.open()) : Socket {
     init {
-        // TODO: Deal with those options
-//        channel.setOption(SO_REUSEADDR, true)
-//        channel.setOption(SO_REUSEPORT, true)
+        channel.setOption(SO_REUSEADDR, true)
+        channel.setOption(SO_REUSEPORT, true)
         channel.setOption(SO_KEEPALIVE, true)
     }
+
+    override suspend fun bind(localAddress: InetSocketAddress): Unit =
+        withContext(Dispatchers.IO) { channel.bind(localAddress) }
 
     override suspend fun connect(address: InetSocketAddress) {
         suspendCancellableCoroutine<Void> {
@@ -36,9 +38,8 @@ internal class TCPSocket(val channel: AsynchronousSocketChannel = AsynchronousSo
         }
     }
 
-    override suspend fun close(): Unit = coroutineScope {
-        launch(Dispatchers.IO) { channel.close() }
-    }
+    override suspend fun close(): Unit =
+        withContext(Dispatchers.IO) { channel.close() }
 
     override suspend fun read(buffer: ByteBuffer) = suspendCancellableCoroutine<Int> {
         channel.read(buffer, it, ContCompletionHandler<Int>())
@@ -49,15 +50,19 @@ internal class TCPSocket(val channel: AsynchronousSocketChannel = AsynchronousSo
     }
 }
 
-internal class TCPServerSocket(port: UShort) {
+internal class TCPServerSocket {
     val channel: AsynchronousServerSocketChannel = AsynchronousServerSocketChannel.open()
 
     init {
-        channel.bind(InetSocketAddress(port.toInt()))
-        // TODO: Deal with those options
-//        channel.setOption(SO_REUSEADDR, true)
-//        channel.setOption(SO_REUSEPORT, true)
+        channel.setOption(SO_REUSEADDR, true)
+        channel.setOption(SO_REUSEPORT, true)
     }
+
+    suspend fun bind(localAddress: InetSocketAddress): Unit =
+        withContext(Dispatchers.IO) { channel.bind(localAddress) }
+
+    suspend fun bind(port: UShort) =
+        bind(InetSocketAddress(port.toInt()))
 
     suspend fun accept() = TCPSocket(suspendCancellableCoroutine {
         channel.accept(it, ContCompletionHandler<AsynchronousSocketChannel>())

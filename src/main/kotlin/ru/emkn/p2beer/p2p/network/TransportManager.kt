@@ -20,8 +20,9 @@ class TransportManager(val peerId: PeerId, val scope: CoroutineScope = p2pScopeF
         set(value) {
             for (transport in transports)
                 transport.extension = value
+            value?.backgroundScope = scope
+            scope.launch { value?.init() }
             field = value
-            scope.launch { extension?.init() }
         }
 
     suspend fun registerTransport(transport: Transport) {

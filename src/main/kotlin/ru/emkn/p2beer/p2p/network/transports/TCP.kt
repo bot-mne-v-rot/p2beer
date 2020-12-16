@@ -12,7 +12,12 @@ import java.io.IOException
 import kotlinx.coroutines.*
 import kotlin.random.*
 
-private class TCPStream(private val socket: TCPSocket, override val thisPeerId: PeerId) : StreamListNode() {
+private class TCPStream(
+    private val socket: TCPSocket,
+    override val thisPeerId: PeerId,
+    override val transport: TransportDescriptor
+) : StreamListNode() {
+
     private val reader = MessageReader(socket)
     private val writer = MessageWriter(socket)
 
@@ -66,6 +71,7 @@ private class TCPStream(private val socket: TCPSocket, override val thisPeerId: 
              * we are receiving too many incorrect
              * messages.
              */
+            println(e)
         }
     }
 
@@ -127,31 +133,28 @@ private class TCPStream(private val socket: TCPSocket, override val thisPeerId: 
         get() = _remotePeerId!!
 
     override val thisEndpoint: Endpoint by lazy {
-        IPEndpoint.toEndpoint(socket.channel.localAddress as InetSocketAddress)
+        (socket.channel.localAddress as InetSocketAddress).toEndpoint()
     }
 
     override val remoteEndpoint: Endpoint by lazy {
-        IPEndpoint.toEndpoint(socket.channel.remoteAddress as InetSocketAddress)
+        (socket.channel.remoteAddress as InetSocketAddress).toEndpoint()
     }
 }
 
-private fun getRandomPort() =
-    Random.nextUInt(1000u, UShort.MAX_VALUE.toUInt()).toUShort()
+class TCP(private val listenerPort: UShort = 0u) : Transport() {
+    override val descriptor = TransportDescriptor(
+        name = "TCP",
+        traits = setOf(Fast(), Reliable(), Supports(this))
+    )
 
-class TCP(port: UShort = getRandomPort()) : Transport() {
-    override val descriptor =
-        TransportDescriptor(
-            name = "TCP",
-            traits = setOf(Fast(), Reliable(), Supports(this))
-        )
-
-    private val listener = TCPServerSocket(port)
+    private val listener = TCPServerSocket()
 
     val listenerEndpoint: Endpoint by lazy {
-        IPEndpoint.toEndpoint(listener.channel.localAddress as InetSocketAddress)
+        (listener.channel.localAddress as InetSocketAddress).toEndpoint()
     }
 
     override suspend fun init() {
+        listener.bind(listenerPort)
         scope?.launch { runAccept() }
     }
 
@@ -163,7 +166,7 @@ class TCP(port: UShort = getRandomPort()) : Transport() {
     }
 
     private suspend fun processStream(socket: TCPSocket): TCPStream = coroutineScope {
-        val stream = TCPStream(socket, peerId!!)
+        val stream = TCPStream(socket, peerId!!, descriptor)
 
         stream.performPeerIdHandshake()
         stream.backgroundIOJob = scope?.launch { stream.runIO() }
@@ -173,19 +176,45 @@ class TCP(port: UShort = getRandomPort()) : Transport() {
     }
 
     override fun supports(endpoint: Endpoint): Boolean =
-        IPEndpoint.isValidEndpoint(endpoint)
+        endpoint.isValidIPEndpoint()
 
-    override suspend fun connect(endpoint: Endpoint) {
+    suspend fun rawConnect(
+        remoteAddress: InetSocketAddress,
+        localAddress: InetSocketAddress? = null,
+        performHandshake: Boolean = true
+    ) {
         val socket = TCPSocket()
-        // TODO: Finally implement hole punching
-//        launch(Dispatchers.IO) {
-//            socket.channel.bind(listener.channel.localAddress)
-//        }.join()
-        socket.connect(IPEndpoint.fromEndpoint(endpoint))
+        if (localAddress != null)
+            socket.bind(localAddress)
+
+        socket.connect(remoteAddress)
 
         val stream = processStream(socket)
-
-        // Connection was init by our side
-        stream.performHandshake()
+        if (performHandshake)
+            stream.performHandshake()
     }
+
+    suspend fun rawAccept(
+        localAddress: InetSocketAddress,
+        performHandshake: Boolean = true
+    ) {
+        val serverSocket = TCPServerSocket()
+        serverSocket.bind(localAddress)
+
+        val socket = serverSocket.accept()
+
+        val stream = processStream(socket)
+        if (performHandshake)
+            stream.performHandshake()
+    }
+
+    override suspend fun connect(endpoint: Endpoint) {
+        rawConnect(endpoint.toInetSocketAddress())
+    }
+
+    private fun getRandomPort() =
+        Random.nextInt(10000, UShort.MAX_VALUE.toInt())
+
+    suspend fun freeEndpoint(): Endpoint =
+        InetSocketAddress(getRandomPort()).toEndpoint()
 }

@@ -4,6 +4,7 @@ import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 
 interface Socket {
+    suspend fun bind(localAddress: InetSocketAddress)
     suspend fun connect(address: InetSocketAddress)
     suspend fun close()
     suspend fun read(buffer: ByteBuffer): Int

@@ -131,6 +131,7 @@ internal fun deserializeMessage(messageProto: ProtocolMessageProto) =
 
 fun protocolRouterOf(vararg protocols : Pair<ProtocolDescriptor, ExtensionNode>) : ProtocolRouterExtension {
     val router = ProtocolRouterExtensionImpl()
+    protocols.forEach { it.second.parent = router }
     router.protocols.putAll(protocols)
     return router
 }

@@ -97,3 +97,12 @@ class IPEndpoint {
 
     }
 }
+
+fun Endpoint.isValidIPEndpoint() =
+    IPEndpoint.isValidEndpoint(this)
+
+fun InetSocketAddress.toEndpoint() =
+    IPEndpoint.toEndpoint(this)
+
+fun Endpoint.toInetSocketAddress() =
+    IPEndpoint.fromEndpoint(this)

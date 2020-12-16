@@ -20,15 +20,11 @@ class RoutingTable(val thisId: PeerId, val maxKBucketSize: Int = 20) {
     // Filled with the one initial k-bucket
     val buckets = mutableListOf<KBucket>(emptyKBucket())
 
-    private fun findBucket(id: PeerId): KBucket? {
-        return if (id != thisId)
-            buckets.getOrNull(id lcp thisId) ?: buckets.last()
-        else
-            null
-    }
+    private fun findBucket(id: PeerId): KBucket =
+        buckets.getOrNull(id lcp thisId) ?: buckets.last()
 
     fun findPeer(id: PeerId): Peer? =
-        findBucket(id)?.firstOrNull { node -> node.id == id }
+        findBucket(id).firstOrNull { node -> node.id == id }
 
     infix fun contains(id: PeerId): Boolean =
         findPeer(id) != null
@@ -61,11 +57,11 @@ class RoutingTable(val thisId: PeerId, val maxKBucketSize: Int = 20) {
         if (contains(peer.id))
             return false
 
-        var bucket = findBucket(peer.id) ?: return false
+        var bucket = findBucket(peer.id)
 
         if (bucket.size == maxKBucketSize) {
             if (splitBucket(bucket))
-                bucket = findBucket(peer.id)!!
+                bucket = findBucket(peer.id)
             else
                 return false
         }
@@ -80,20 +76,22 @@ class RoutingTable(val thisId: PeerId, val maxKBucketSize: Int = 20) {
     }
 
     fun findNearestPeers(id: PeerId): List<Peer> {
-        val bucket = findBucket(id) ?: return buckets.last()
+        val bucket = findBucket(id)
 
         val result = mutableListOf<Peer>()
         result.addAll(bucket)
 
         val cur = buckets.indexOf(bucket)
-        var l: Int = cur - 1
-        var r: Int = cur + 1
-        while (result.size < maxKBucketSize && (l >= 0 || r < bucket.size)) {
-            if (l >= 0)
-                result.addAll(buckets[l--])
-            if (r < bucket.size)
+
+        if (result.size < maxKBucketSize) {
+            var r: Int = cur + 1
+            while (r < buckets.size)
                 result.addAll(buckets[r++])
         }
+
+        var l: Int = cur - 1
+        while (result.size < maxKBucketSize && l >= 0)
+            result.addAll(buckets[l--])
 
         return result
             .sortedWith { n1, n2 -> id.xorCmp(n1.id, n2.id) }

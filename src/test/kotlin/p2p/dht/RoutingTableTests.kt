@@ -30,7 +30,7 @@ class RoutingTableTests {
     }
 
     @Test
-    fun `test finding nearest`() {
+    fun `test finding nearest`() = repeat(100) {
         val thisId = PeerId.zeroes()
         val maxKBucketSize = 3
         val routingTable = RoutingTable(thisId, maxKBucketSize)
