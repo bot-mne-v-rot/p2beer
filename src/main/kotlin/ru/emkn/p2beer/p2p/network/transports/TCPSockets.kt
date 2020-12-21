@@ -67,4 +67,7 @@ internal class TCPServerSocket {
     suspend fun accept() = TCPSocket(suspendCancellableCoroutine {
         channel.accept(it, ContCompletionHandler<AsynchronousSocketChannel>())
     })
+
+    suspend fun close() =
+        withContext(Dispatchers.IO) { channel.close() }
 }
