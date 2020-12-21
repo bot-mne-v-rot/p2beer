@@ -1,4 +1,4 @@
-<img src="https://github.com/bot-mne-v-rot/p2beer/blob/master/images/real_logo.png" width="400" height="790">
+<img src="images/real_logo.png" width="100" height="100"/>
 
 [![forthebadge](https://forthebadge.com/images/badges/powered-by-energy-drinks.svg)](https://forthebadge.com)
 
