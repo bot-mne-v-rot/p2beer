@@ -1,24 +1,28 @@
-![Logo](/images/real_logo.png)
-![fff](https://img.shields.io/badge/downloads-7M-important)
+![Logo](images/real_logo.png)
 
+[![forthebadge](https://forthebadge.com/images/badges/powered-by-energy-drinks.svg)](https://forthebadge.com)
 
+[![forthebadge](https://forthebadge.com/images/badges/built-with-love.svg)](https://forthebadge.com)
 
-##About
-**P2beer is a fully decentralized desktop messenger 
-created by three ambitious students of SPbSU in just 3 weeks**
+## About
+P2beer is a fully decentralized desktop messenger
+created by three ambitious and fearless students of SPbSU in just 3 weeks.
 
-##Principles
+## Principles
 * Privacy. Security. Beer.
 
-##Main features
+## Main features
 * Old-school design
-    *
+    * TODO
 * Asynchronous network
-    *
+    * TODO
 * Complex data storage
     * Based on BTree data structure
-    * Implemented by olympiad 
     * Tested on ten users, ready for billions
+    * 
     
+## Usage
+TODO
+
 ## Contribution
 We don't need it.
