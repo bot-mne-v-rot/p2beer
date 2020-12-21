@@ -10,6 +10,7 @@ import java.net.InetSocketAddress
 import java.io.IOException
 
 import kotlinx.coroutines.*
+import java.lang.Exception
 import kotlin.random.*
 
 private class TCPStream(
@@ -209,12 +210,29 @@ class TCP(private val listenerPort: UShort = 0u) : Transport() {
     }
 
     override suspend fun connect(endpoint: Endpoint) {
-        rawConnect(endpoint.toInetSocketAddress())
+        try {
+            rawConnect(endpoint.toInetSocketAddress())
+        } catch (e: Exception) {
+            throw ConnectionFailedException(endpoint)
+        }
     }
 
     private fun getRandomPort() =
         Random.nextInt(10000, UShort.MAX_VALUE.toInt())
 
-    suspend fun freeEndpoint(): Endpoint =
-        InetSocketAddress(getRandomPort()).toEndpoint()
+    /**
+     * May seem to be not the best solution.
+     * But there is no other way to find free
+     * port except opening socket with special
+     * options and waiting for OS to allocate an
+     * unused port.
+     */
+    suspend fun freeEndpoint(): Endpoint {
+        val socket = TCPServerSocket()
+        socket.bind(InetSocketAddress(0))
+
+        val endpoint = (socket.channel.localAddress as InetSocketAddress).toEndpoint()
+        socket.close()
+        return endpoint
+    }
 }

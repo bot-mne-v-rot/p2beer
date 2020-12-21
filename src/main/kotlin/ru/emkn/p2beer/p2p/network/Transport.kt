@@ -48,9 +48,7 @@ abstract class Transport {
      * Initiates new connection then extends new stream
      * and finally calls [StreamNode.performHandshake]
      *
-     * @throws IOException
-     * @throws HandshakeFailedException
-     * @throws IllegalStateException
+     * @throws ConnectionFailedException
      */
     abstract suspend fun connect(endpoint: Endpoint)
 
@@ -68,4 +66,10 @@ abstract class Transport {
     suspend fun connectWithDefaultStrategy(endpoint: Endpoint) {
         connectWithStrategy(endpoint, defaultStrategy)
     }
+}
+
+class ConnectionFailedException: IOException {
+    constructor(): super("Failed to connect to ")
+    constructor(endpoint: Endpoint): super("Failed to connect to $endpoint")
+    constructor(id: PeerId): super("Failed to connect to $id")
 }
