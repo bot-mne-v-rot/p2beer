@@ -3,6 +3,8 @@ package ru.emkn.p2beer.p2p.network
 import ru.emkn.p2beer.p2p.PeerId
 import ru.emkn.p2beer.p2p.Buffer
 
+import kotlin.reflect.KProperty
+
 /**
  * One of the base abstractions for the protocol.
  * Stream nodes form a tree.
@@ -84,7 +86,7 @@ interface StreamNode {
     /**
      * Transport descriptor inherited from the [Transport]
      *
-     * DON'T ACCESS BEFORE PARENT IS ATTACHED
+     * @throws StreamParentNotAttachedException
      */
     val transport: TransportDescriptor
 
@@ -92,28 +94,28 @@ interface StreamNode {
      * Our peer id. It's one for the whole application
      * but is put here for convenience.
      *
-     * DON'T ACCESS BEFORE PARENT IS ATTACHED
+     * @throws StreamParentNotAttachedException
      */
     val thisPeerId: PeerId
 
     /**
      * Remote node's PeerId associated with the Stream
      *
-     * DON'T ACCESS BEFORE PARENT IS ATTACHED
+     * @throws StreamParentNotAttachedException
      */
     val remotePeerId: PeerId
 
     /**
      * Endpoint from which we communicate
      *
-     * DON'T ACCESS BEFORE PARENT IS ATTACHED
+     * @throws StreamParentNotAttachedException
      */
     val thisEndpoint: Endpoint
 
     /**
      * Endpoint to which we communicate
      *
-     * DON'T ACCESS BEFORE PARENT IS ATTACHED
+     * @throws StreamParentNotAttachedException
      */
     val remoteEndpoint: Endpoint
 }
@@ -163,24 +165,24 @@ open class StreamLeafNode : StreamNode {
         // Message processing
     }
 
-    override val thisPeerId: PeerId by lazy {
-        parent!!.thisPeerId
+    override val thisPeerId: PeerId by InheritFromParentStream { parent ->
+        parent.thisPeerId
     }
 
-    override val remotePeerId: PeerId by lazy {
-        parent!!.remotePeerId
+    override val remotePeerId: PeerId by InheritFromParentStream { parent ->
+        parent.remotePeerId
     }
 
-    override val transport: TransportDescriptor by lazy {
-        parent!!.transport
+    override val transport: TransportDescriptor by InheritFromParentStream { parent ->
+        parent.transport
     }
 
-    override val thisEndpoint: Endpoint by lazy {
-        parent!!.thisEndpoint
+    override val thisEndpoint: Endpoint by InheritFromParentStream { parent ->
+        parent.thisEndpoint
     }
 
-    override val remoteEndpoint: Endpoint by lazy {
-        parent!!.remoteEndpoint
+    override val remoteEndpoint: Endpoint by InheritFromParentStream { parent ->
+        parent.remoteEndpoint
     }
 }
 
@@ -224,4 +226,22 @@ class HandshakeFailedException : Exception {
 class ClosureFailedException : Exception {
     constructor() : super("Closure failed.")
     constructor(message: String) : super("Closure failed due to:\n $message")
+}
+
+class StreamParentNotAttachedException :
+    IllegalStateException("Required stream node's parent in not attached.")
+
+class InheritFromParentStream<out T>(initializer: (parent: StreamNode) -> T) {
+    private var parent: StreamNode? = null
+
+    private val lazyVal: T by lazy {
+        initializer(parent!!)
+    }
+
+    operator fun getValue(thisRef: StreamNode?, property: KProperty<*>): T {
+        if (thisRef?.parent == null)
+            throw StreamParentNotAttachedException()
+        parent = thisRef.parent
+        return lazyVal
+    }
 }
