@@ -3,9 +3,18 @@ package ru.emkn.p2beer.p2p.network
 import kotlinx.coroutines.*
 import ru.emkn.p2beer.p2p.*
 
-val p2pScopeFactory
+val p2pScopeFactory: CoroutineScope
     @ObsoleteCoroutinesApi
-    get() = CoroutineScope(newSingleThreadContext("P2P"))
+    get() {
+        val context = newSingleThreadContext("P2P")
+        val job = SupervisorJob()
+        val handler = CoroutineExceptionHandler { _, throwable ->
+            println("Exception occurred in P2P thread:\n" +
+                    "$throwable \n + ${throwable.message}")
+            throwable.printStackTrace()
+        }
+        return CoroutineScope(context + job + handler)
+    }
 
 class TransportManager(val peerId: PeerId, val scope: CoroutineScope = p2pScopeFactory) {
     val transportsByName: Map<Name, Transport>
