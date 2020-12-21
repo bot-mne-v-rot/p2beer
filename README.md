@@ -20,7 +20,7 @@ Privacy. Security. Beer.
 * Complex data storage
     * Based on BTree data structure
     * Tested on ten users, ready for billions
-    * 
+    * Works only with ```import guru.bravit```
 
 # Usage
 TODO
