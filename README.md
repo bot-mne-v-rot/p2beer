@@ -1,4 +1,4 @@
-<img src="images/real_logo.png" width="100" height="100"/>
+<img src="images/real_logo.png" width="400" height="400"/>
 
 [![forthebadge](https://forthebadge.com/images/badges/powered-by-energy-drinks.svg)](https://forthebadge.com)
 
