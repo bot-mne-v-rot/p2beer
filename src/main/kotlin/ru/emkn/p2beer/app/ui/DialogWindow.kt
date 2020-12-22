@@ -69,7 +69,7 @@ class DialogWindow(
                 }
             }
 
-            //messages.setValidationPattern(Pattern.compile("/(?:)/"))
+            messages.setValidationPattern(Pattern.compile("/(?:)/"))
 
             messages.setCaretPosition(messages.lineCount, 0)
 
@@ -219,7 +219,7 @@ class DialogWindow(
          * message
          */
 
-        //messages.setValidationPattern(Pattern.compile("."))
+        messages.setValidationPattern(null)
 
         /**
          * Show this message
@@ -234,7 +234,7 @@ class DialogWindow(
          * And block it again
          */
 
-        //messages.setValidationPattern(Pattern.compile("/(?:)/"))
+        messages.setValidationPattern(Pattern.compile("/(?:)/"))
     }
 }
 
