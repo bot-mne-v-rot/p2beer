@@ -13,8 +13,11 @@ created by three ambitious and fearless students of SPbSU in just 3 weeks.
 Privacy. Security. Beer.
 
 # Main features
-* Old-school design
-    * TODO
+* User Interface 
+    * Curses-like interface to remind you of the good old past times
+    * Easily expandable architecture 
+    * You can run the app straight from the terminal, 
+    what makes it convenient for quick messaging
 * Asynchronous network
     * TODO
 * Complex data storage
