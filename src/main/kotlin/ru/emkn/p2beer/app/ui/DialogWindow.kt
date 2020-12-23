@@ -3,9 +3,10 @@ package ru.emkn.p2beer.app.ui
 import com.googlecode.lanterna.TerminalSize
 import com.googlecode.lanterna.gui2.*
 import ru.emkn.p2beer.app.client.chat.*
-import ru.emkn.p2beer.app.client.user.*
-import ru.emkn.p2beer.app.client.util.timestampToDate
-import ru.emkn.p2beer.app.client.util.wrapText
+import ru.emkn.p2beer.app.client.user.Account
+import ru.emkn.p2beer.app.client.user.FriendConnection
+import ru.emkn.p2beer.app.client.user.JSONUserDataStorageImpl
+import ru.emkn.p2beer.app.client.util.*
 import java.io.File
 import java.util.regex.Pattern
 
@@ -13,7 +14,7 @@ class DialogWindow(
     private val openChat: ChatImpl,
     private val me: Account,
     private val friendConnection: FriendConnection
-    ) {
+) {
 
     fun addDialogWindow(
         actionListBox: ActionListBox,
@@ -52,17 +53,21 @@ class DialogWindow(
 
             checkIfChatRegistered(openChat.toString())
 
-            val bTree = BTree(5,
-                    "src/main/kotlin/ru/emkn/p2beer/app/resources/chatlists/$openChat/index.bin",
-                    "src/main/kotlin/ru/emkn/p2beer/app/resources/chatlists/$openChat/messages.bin"
+            val bTree = BTree(
+                5,
+                "src/main/kotlin/ru/emkn/p2beer/app/resources/chatlists/$openChat/index.bin",
+                "src/main/kotlin/ru/emkn/p2beer/app/resources/chatlists/$openChat/messages.bin"
             )
 
             if (getNumberOfMessages(bTree) != 0) {
 
                 val messageList = getKLastMessages(
-                        bTree,
-                        minOf(getNumberOfMessages(bTree), 20)
+                    bTree,
+                    minOf(getNumberOfMessages(bTree), messagesLoadByOnceNum)
                 )
+
+                openChat.firstLoadedMessage = messageList.last()
+                openChat.loadedMessagesCount += messageList.size
 
                 for (message in messageList.reversed()) {
                     messages.addLine(messageToString(message))
@@ -70,8 +75,8 @@ class DialogWindow(
             }
 
             messages.setValidationPattern(Pattern.compile("/(?:)/"))
-
             messages.setCaretPosition(messages.lineCount, 0)
+
 
             chatPanel.addComponent(
                 messages.setLayoutData(BorderLayout.Location.CENTER)
@@ -152,40 +157,32 @@ class DialogWindow(
                 ).setLayoutData(BorderLayout.Location.BOTTOM)
             )
 
+            val listener = MessagesScrollListener(messages, bTree, openChat)
+            window.addWindowListener(listener)
+
             window.component = mainPanel.withBorder(Borders.singleLine("Main Panel"))
             textGUI.addWindowAndWait(window)
-
         }
     }
 
-    private fun messageToString(message: Message) : String {
-        //TODO: Optimize textBox to resize messages for proper width
-        return("""
-            |${timestampToDate(message)}
-            |   ${wrapText(50, message.text)}
-            |"""
-                .trimMargin()
-                )
-        //TODO: Change colors of field Sender and time
 
-        //TODO: add author to the shown message
-    }
 
     private fun createMessage(message: String) : Message {
         val pk = me.userInfo.pubKey
         val twoBytesOfUserID : UShort = (pk[pk.size - 1] + pk[pk.size - 2]).toUShort()
         val info = MessageId(
-                openChat.friend.messagesCount + 1,
-                System.currentTimeMillis(),
-                twoBytesOfUserID
+            openChat.friend.messagesCount + 1,
+            System.currentTimeMillis(),
+            twoBytesOfUserID
         )
         return Message(message, info, pk)
     }
 
-    private fun sendMessage(bTree: BTree,
-                            message: Message,
-                            messages: TextBox,
-                            messageField: TextBox
+    private fun sendMessage(
+        bTree: BTree,
+        message: Message,
+        messages: TextBox,
+        messageField: TextBox
     ) {
         /**
          * Send message
@@ -244,3 +241,15 @@ fun checkIfChatRegistered(userName: String) {
         File(folderName).mkdirs()
 }
 
+fun messageToString(message: Message) : String {
+    //TODO: Optimize textBox to resize messages for proper width
+    return("""
+            |${timestampToDate(message)}
+            |   ${wrapText(50, message.text)}
+            |"""
+        .trimMargin()
+            )
+    //TODO: Change colors of field Sender and time
+
+    //TODO: add author to the shown message
+}

@@ -7,6 +7,8 @@ import kotlin.collections.ArrayDeque
 class ChatImpl (val friend : Friend) : Chat {
 
     private val loadedMessages : ArrayDeque<Message> = ArrayDeque()
+    lateinit var firstLoadedMessage : Message
+    var loadedMessagesCount = 0
 
     /**
      * 13 September 2009 г., 14:22:08
@@ -18,18 +20,4 @@ class ChatImpl (val friend : Friend) : Chat {
     }
 
     override fun toString () = this.friend.userInfo.userName
-
-
-//    val messagesCount = friend.messagesCount
-//    var onlineStatus : Boolean = this.friend.userInfo.onlineStatus
-//    var lastSeen : Long = defaultLastSeen
-
-//    override fun updateOnlineStatus(newStatus: Boolean) {
-//        this.onlineStatus = newStatus
-//    }
-//
-//    override fun updateLastSeen(newLastSeen: Long) {
-//        this.lastSeen = newLastSeen
-//    }
-
 }

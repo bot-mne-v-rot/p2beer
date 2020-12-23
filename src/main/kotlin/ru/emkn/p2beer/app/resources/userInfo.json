@@ -114,8 +114,8 @@
         "onlineStatus": false
       },
       "isConnected": true,
-      "messagesCount": 61,
-      "lastMessageTimeStamp": 1608075621674
+      "messagesCount": 62,
+      "lastMessageTimeStamp": 1608690592269
     },
     {
       "userInfo": {
@@ -158,8 +158,8 @@
         "onlineStatus": false
       },
       "isConnected": false,
-      "messagesCount": 28,
-      "lastMessageTimeStamp": 1608075638854
+      "messagesCount": 31,
+      "lastMessageTimeStamp": 1608681245710
     }
   ]
 }

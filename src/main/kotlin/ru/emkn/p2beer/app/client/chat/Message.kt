@@ -1,7 +1,5 @@
 package ru.emkn.p2beer.app.client.chat
 
-import ru.emkn.p2beer.app.client.user.*
-
 data class Message(
     val text: String,
     val info: MessageId,

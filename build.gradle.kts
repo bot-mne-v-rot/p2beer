@@ -32,7 +32,7 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
     testImplementation(kotlin("test"))
     // Lanterna Library
-    implementation("com.googlecode.lanterna:lanterna:3.0.0")
+    implementation("com.googlecode.lanterna:lanterna:3.1.0")
     implementation("com.google.guava:guava:30.0-jre")
     // JSON libs
     implementation("com.google.code.gson:gson:2.8.6")

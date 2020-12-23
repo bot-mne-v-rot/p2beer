@@ -111,7 +111,6 @@ fun getKNextMessages(bTree: BTree, message: Message, k: Int): List<Message> =
 fun getKPreviousMessages(bTree: BTree, message: Message, k: Int): List<Message> =
         findKPreviousMessages(bTree, getRoot(bTree), message, k, k)
 
-
 fun getNumberOfMessages(bTree: BTree): Int {
     bTree.fileWithIndex.seek(bTree.fileWithIndex.length() - Int.SIZE_BYTES)
     return bTree.fileWithIndex.readInt()

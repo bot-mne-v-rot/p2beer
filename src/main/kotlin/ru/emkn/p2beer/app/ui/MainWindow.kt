@@ -120,4 +120,3 @@ class MainWindow (private val me: Account) {
         }
     }
 }
-
