@@ -81,16 +81,16 @@ class TCPHolePunchingExtension(
         val thisEndpoint = TCP.unusedEndpoint()
 
         try {
-            val remoteEndpoint =
+            val (remoteEndpoint, remoteListenerEndpoint) =
                 streamToMediator.performConnectionFirstStep(
                     remotePeerId,
                     thisEndpoint,
                     rpcTimeoutMillis
                 ) ?: return false
 
-            return attemptConnect(
+            return attemptConnectToSeveral(
                 thisEndpoint,
-                remoteEndpoint,
+                listOf(remoteEndpoint, remoteListenerEndpoint),
                 remotePeerId,
                 performHandshake = true,
                 attemptTimeoutMillis = connectionTimeoutMillis
@@ -105,7 +105,7 @@ class TCPHolePunchingExtension(
         firstPeerId: PeerId,
         firstEndpoint: Endpoint,
         secondPeerId: PeerId
-    ): Endpoint? {
+    ): Pair<Endpoint, Endpoint>? {
         val streamToSecond = streamStore[secondPeerId] ?: return null
         return streamToSecond.performConnectionSecondStep(
             firstPeerId,
@@ -117,45 +117,60 @@ class TCPHolePunchingExtension(
     private suspend fun onConnectionSecondStepRequest(
         firstPeerId: PeerId,
         firstEndpoint: Endpoint
-    ): Endpoint {
+    ): Pair<Endpoint, Endpoint> {
         val secondEndpoint = TCP.unusedEndpoint()
+        val secondListenerEndpoint = transport.listenerEndpoint
+
         println(firstEndpoint + secondEndpoint)
 
         backgroundScope?.launch {
-            val connJob = this.coroutineContext.job
-            launch {
-                attemptConnect(
-                    thisEndpoint = secondEndpoint,
-                    remoteEndpoint = firstEndpoint,
-                    remotePeerId = firstPeerId,
-                    performHandshake = false,
-                    anotherConnectionJob = connJob
-                )
-            }
-//            launch {
-//                attemptAccept(
-//                    thisEndpoint = secondEndpoint,
-//                    remotePeerId = firstPeerId,
-//                    performHandshake = false,
-//                    anotherConnectionJob = connJob
-//                )
-//            }
+            attemptConnect(
+                thisEndpoint = secondEndpoint,
+                remoteEndpoint = firstEndpoint,
+                remotePeerId = firstPeerId,
+                performHandshake = false
+            )
         }
 
-
-        return secondEndpoint
+        return secondEndpoint to secondListenerEndpoint
     }
+
+    private suspend fun attemptConnectToSeveral(
+        thisEndpoint: Endpoint,
+        remoteEndpoints: List<Endpoint>,
+        remotePeerId: PeerId,
+        performHandshake: Boolean,
+        attemptDelayMillis: Long = 10,
+        attemptTimeoutMillis: Long = 1000
+    ): Boolean = coroutineScope {
+        remoteEndpoints.map { endpoint ->
+            async {
+                attemptConnect(
+                    thisEndpoint,
+                    endpoint,
+                    remotePeerId,
+                    performHandshake,
+                    attemptDelayMillis,
+                    attemptTimeoutMillis
+                )
+            }
+        }
+    }.awaitAll().any { it }
 
     private suspend fun attemptConnect(
         thisEndpoint: Endpoint,
         remoteEndpoint: Endpoint,
         remotePeerId: PeerId,
         performHandshake: Boolean,
-        anotherConnectionJob: Job? = null,
         attemptDelayMillis: Long = 10,
         attemptTimeoutMillis: Long = 1000
     ): Boolean {
         for (attempt in 0 until connectionAttempts) {
+            // If some of the routines succeed in connection, we break
+            streamStore[remotePeerId]?.let {
+                return false
+            }
+
             try {
                 delay(attemptDelayMillis)
 
@@ -166,7 +181,6 @@ class TCPHolePunchingExtension(
                         performHandshake
                     )
                 }
-                anotherConnectionJob?.cancel()
 
                 println("Successfully connected to $remotePeerId")
                 return true
@@ -226,7 +240,7 @@ class TCPHolePunchingStream : StreamLeafNode() {
         secondPeerId: PeerId,
         firstEndpoint: Endpoint,
         rpcTimeoutMillis: Long
-    ): Endpoint? {
+    ): Pair<Endpoint, Endpoint>? {
         val request = ConnectionFirstRequest(secondPeerId, firstEndpoint)
         val requestMsg = serializeConnectionFirstRequest(request)
 
@@ -238,14 +252,16 @@ class TCPHolePunchingStream : StreamLeafNode() {
 
         val response = deserializeConnectionFirstResponse(responseMsg)
 
-        return if (response.reachedSecond) response.secondEndpoint else null
+        return if (response.reachedSecond)
+            response.secondEndpoint to response.secondListenerEndpoint
+        else null
     }
 
     suspend fun performConnectionSecondStep(
         firstPeerId: PeerId,
         firstEndpoint: Endpoint,
         rpcTimeoutMillis: Long
-    ): Endpoint {
+    ): Pair<Endpoint, Endpoint> {
         val request = ConnectionSecondRequest(firstPeerId, firstEndpoint)
         val requestMsg = serializeConnectionSecondRequest(request)
 
@@ -254,11 +270,12 @@ class TCPHolePunchingStream : StreamLeafNode() {
             requestMsg,
             rpcTimeoutMillis
         )
-        val response = deserializeConnectionSecondResponse(responseMsg)
 
-        return response.secondEndpoint.apply {
-            substituteExternalAddress(this, remoteEndpoint)
-        }
+        val response = deserializeConnectionSecondResponse(responseMsg)
+        val secondEndpoint = substituteExternalAddress(response.secondEndpoint, remoteEndpoint)
+        val secondListenerEndpoint = substituteExternalAddress(response.secondListenerEndpoint, remoteEndpoint)
+
+        return secondEndpoint to secondListenerEndpoint
     }
 
     fun onConnectionFirstStepRequest(
@@ -267,19 +284,37 @@ class TCPHolePunchingStream : StreamLeafNode() {
             firstPeerId: PeerId,
             firstEndpoint: Endpoint,
             secondPeerId: PeerId
-        ) -> Endpoint?
+        ) -> Pair<Endpoint, Endpoint>?
     ) {
         rpcBase.rpcHandlers[MessageTypes.CONNECTION_FIRST_STEP.typeId] = { requestMsg ->
             val request = deserializeConnectionFirstRequest(requestMsg)
 
-            val firstEndpoint = substituteExternalAddress(request.firstEndpoint, remoteEndpoint)
+            val firstEndpoint =
+                substituteExternalAddress(request.firstEndpoint, remoteEndpoint)
 
-            val secondEndpoint = handler(remotePeerId, firstEndpoint, request.secondPeerId)
+            val endpointsPair =
+                handler(
+                    remotePeerId,
+                    firstEndpoint,
+                    request.secondPeerId
+                )
+
             // Null endpoint means that we couldn't connect to the second peer
-            val response = ConnectionFirstResponse(
-                secondEndpoint = secondEndpoint ?: "",
-                reachedSecond = secondEndpoint != null
-            )
+            val response =
+                if (endpointsPair != null) {
+                    val (secondEndpoint, secondListenerEndpoint) = endpointsPair
+                    ConnectionFirstResponse(
+                        secondEndpoint = secondEndpoint,
+                        secondListenerEndpoint = secondListenerEndpoint,
+                        reachedSecond = true
+                    )
+                } else {
+                    ConnectionFirstResponse(
+                        secondEndpoint = "",
+                        secondListenerEndpoint = "",
+                        reachedSecond = false
+                    )
+                }
             serializeConnectionFirstResponse(response)
         }
     }
@@ -289,13 +324,16 @@ class TCPHolePunchingStream : StreamLeafNode() {
         suspend (
             firstPeerId: PeerId,
             firstEndpoint: Endpoint
-        ) -> Endpoint
+        ) -> Pair<Endpoint, Endpoint>
     ) {
         rpcBase.rpcHandlers[MessageTypes.CONNECTION_SECOND_STEP.typeId] = { requestMsg ->
             val request = deserializeConnectionSecondRequest(requestMsg)
-            val secondEndpoint = handler(remotePeerId, request.firstEndpoint)
+            val (secondEndpoint, secondListenerEndpoint) = handler(
+                remotePeerId,
+                request.firstEndpoint
+            )
 
-            val response = ConnectionSecondResponse(secondEndpoint)
+            val response = ConnectionSecondResponse(secondEndpoint, secondListenerEndpoint)
             serializeConnectionSecondResponse(response)
         }
     }
@@ -369,13 +407,26 @@ class TCPHolePunchingStream : StreamLeafNode() {
     }
 }
 
-private class ConnectionFirstRequest(val secondPeerId: PeerId, val firstEndpoint: Endpoint)
+private class ConnectionFirstRequest(
+    val secondPeerId: PeerId,
+    val firstEndpoint: Endpoint
+)
 
-private class ConnectionFirstResponse(val secondEndpoint: Endpoint, val reachedSecond: Boolean)
+private class ConnectionFirstResponse(
+    val secondEndpoint: Endpoint,
+    val secondListenerEndpoint: Endpoint,
+    val reachedSecond: Boolean
+)
 
-private class ConnectionSecondRequest(val firstPeerId: PeerId, val firstEndpoint: Endpoint)
+private class ConnectionSecondRequest(
+    val firstPeerId: PeerId,
+    val firstEndpoint: Endpoint
+)
 
-private class ConnectionSecondResponse(val secondEndpoint: Endpoint)
+private class ConnectionSecondResponse(
+    val secondEndpoint: Endpoint,
+    val secondListenerEndpoint: Endpoint
+)
 
 private fun serializeConnectionFirstRequest(request: ConnectionFirstRequest): ByteArray =
     TCPHolePunchingProtos.ConnectionFirstRequest
@@ -390,6 +441,7 @@ private fun serializeConnectionFirstResponse(response: ConnectionFirstResponse):
         .newBuilder()
         .setReachedSecond(response.reachedSecond)
         .setSecondEndpoint(response.secondEndpoint)
+        .setSecondListenerEndpoint(response.secondListenerEndpoint)
         .build()
         .toByteArray()
 
@@ -405,6 +457,7 @@ private fun serializeConnectionSecondResponse(response: ConnectionSecondResponse
     TCPHolePunchingProtos.ConnectionSecondResponse
         .newBuilder()
         .setSecondEndpoint(response.secondEndpoint)
+        .setSecondListenerEndpoint(response.secondListenerEndpoint)
         .build()
         .toByteArray()
 
@@ -414,7 +467,10 @@ private suspend fun deserializeConnectionFirstRequest(bytes: ByteArray): Connect
             .parseFrom(bytes)
     }
 
-    return ConnectionFirstRequest(proto.secondPeerId.toPeerId(), proto.firstEndpoint)
+    return ConnectionFirstRequest(
+        proto.secondPeerId.toPeerId(),
+        proto.firstEndpoint
+    )
 }
 
 private suspend fun deserializeConnectionFirstResponse(bytes: ByteArray): ConnectionFirstResponse {
@@ -423,7 +479,7 @@ private suspend fun deserializeConnectionFirstResponse(bytes: ByteArray): Connec
             .parseFrom(bytes)
     }
 
-    return ConnectionFirstResponse(proto.secondEndpoint, proto.reachedSecond)
+    return ConnectionFirstResponse(proto.secondEndpoint, proto.secondListenerEndpoint, proto.reachedSecond)
 }
 
 private suspend fun deserializeConnectionSecondRequest(bytes: ByteArray): ConnectionSecondRequest {
@@ -432,7 +488,10 @@ private suspend fun deserializeConnectionSecondRequest(bytes: ByteArray): Connec
             .parseFrom(bytes)
     }
 
-    return ConnectionSecondRequest(proto.firstPeerId.toPeerId(), proto.firstEndpoint)
+    return ConnectionSecondRequest(
+        proto.firstPeerId.toPeerId(),
+        proto.firstEndpoint
+    )
 }
 
 private suspend fun deserializeConnectionSecondResponse(bytes: ByteArray): ConnectionSecondResponse {
@@ -441,5 +500,5 @@ private suspend fun deserializeConnectionSecondResponse(bytes: ByteArray): Conne
             .parseFrom(bytes)
     }
 
-    return ConnectionSecondResponse(proto.secondEndpoint)
+    return ConnectionSecondResponse(proto.secondEndpoint, proto.secondListenerEndpoint)
 }

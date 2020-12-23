@@ -6,12 +6,13 @@ option java_package = "ru.emkn.p2beer.p2p.network.transports";
 option java_outer_classname = "TCPHolePunchingProtos";
 
 message ConnectionFirstRequest {
-   bytes secondPeerId = 1;
-   string firstEndpoint = 2;
+    bytes secondPeerId = 1;
+    string firstEndpoint = 2;
 }
 
 message ConnectionFirstResponse {
     string secondEndpoint = 1;
+    string secondListenerEndpoint = 3;
     bool reachedSecond = 2;
 }
 
@@ -22,4 +23,5 @@ message ConnectionSecondRequest {
 
 message ConnectionSecondResponse {
     string secondEndpoint = 1;
+    string secondListenerEndpoint = 2;
 }
