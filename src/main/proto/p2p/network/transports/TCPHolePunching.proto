@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package p2p.network.transports;
+
+option java_package = "ru.emkn.p2beer.p2p.network.transports";
+option java_outer_classname = "TCPHolePunchingProtos";
+
+message ConnectionFirstRequest {
+   bytes secondPeerId = 1;
+   string firstEndpoint = 2;
+}
+
+message ConnectionFirstResponse {
+    string secondEndpoint = 1;
+    bool reachedSecond = 2;
+}
+
+message ConnectionSecondRequest {
+    bytes firstPeerId = 1;
+    string firstEndpoint = 2;
+}
+
+message ConnectionSecondResponse {
+    string secondEndpoint = 1;
+}

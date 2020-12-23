@@ -207,32 +207,36 @@ class TCP(private val listenerPort: UShort = 0u) : Transport() {
         val stream = processStream(socket)
         if (performHandshake)
             stream.performHandshake()
+
+        serverSocket.close()
     }
 
     override suspend fun connect(endpoint: Endpoint) {
         try {
             rawConnect(endpoint.toInetSocketAddress())
         } catch (e: Exception) {
-            throw ConnectionFailedException(endpoint)
+            throw ConnectionFailedException(endpoint, e)
         }
     }
 
     private fun getRandomPort() =
         Random.nextInt(10000, UShort.MAX_VALUE.toInt())
 
-    /**
-     * May seem to be not the best solution.
-     * But there is no other way to find free
-     * port except opening socket with special
-     * options and waiting for OS to allocate an
-     * unused port.
-     */
-    suspend fun freeEndpoint(): Endpoint {
-        val socket = TCPServerSocket()
-        socket.bind(InetSocketAddress(0))
+    companion object {
+        /**
+         * May seem to be not the best solution.
+         * But there is no other way to find free
+         * port except opening socket with special
+         * options and waiting for OS to allocate an
+         * unused port.
+         */
+        suspend fun unusedEndpoint(): Endpoint {
+            val socket = TCPServerSocket()
+            socket.bind(port = 0u)
 
-        val endpoint = (socket.channel.localAddress as InetSocketAddress).toEndpoint()
-        socket.close()
-        return endpoint
+            val endpoint = (socket.channel.localAddress as InetSocketAddress).toEndpoint()
+            socket.close()
+            return endpoint
+        }
     }
 }

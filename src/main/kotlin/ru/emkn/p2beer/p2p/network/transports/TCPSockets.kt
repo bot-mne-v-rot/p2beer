@@ -25,7 +25,6 @@ internal class TCPSocket(val channel: AsynchronousSocketChannel = AsynchronousSo
     init {
         channel.setOption(SO_REUSEADDR, true)
         channel.setOption(SO_REUSEPORT, true)
-        channel.setOption(SO_KEEPALIVE, true)
     }
 
     override suspend fun bind(localAddress: InetSocketAddress): Unit =

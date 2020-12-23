@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package p2p.dht;
+
+option java_package = "ru.emkn.p2beer.p2p.dht";
+option java_outer_classname = "KadDHTProtos";
+
+message FindPeersRequest {
+  bytes peerId = 1;
+}
+
+message Peer {
+  bytes peerId = 1;
+  string endpoint = 2;
+}
+
+message FindPeersResponse {
+  repeated Peer peers = 1;
+}

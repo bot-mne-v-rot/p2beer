@@ -72,4 +72,6 @@ class ConnectionFailedException: IOException {
     constructor(): super("Failed to connect to ")
     constructor(endpoint: Endpoint): super("Failed to connect to $endpoint")
     constructor(id: PeerId): super("Failed to connect to $id")
+    constructor(endpoint: Endpoint, e: Exception): super("Failed to connect to $endpoint due to $e: \n" +
+            "Original stack: ${e.stackTraceToString()}\n")
 }
