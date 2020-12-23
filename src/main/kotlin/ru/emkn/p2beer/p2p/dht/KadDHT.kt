@@ -105,17 +105,16 @@ class KadDHTExtension(
         askedPeersIds: MutableSet<PeerId>
     ) {
         supervisorScope {
-            val deferred = streams.map {
-                async { it.rpc.findPeers(id) }
-            }
             result.addAll(
-                awaitAll(*deferred.toTypedArray())
+                streams.map {
+                    async { it.rpc.findPeers(id) }
+                }
+                    .awaitAll()
                     .flatten()
                     .filter {
                         it.id != thisId && it.id !in askedPeersIds
                     }
-                    .groupBy { it.id }
-                    .values
+                    .groupBy { it.id }.values
                     .map { peersWithSameId ->
                         peersWithSameId.first()
                     }
@@ -127,7 +126,7 @@ class KadDHTExtension(
         peers: Set<Peer>,
         mediators: Set<Peer>
     ): List<KadDHTStream> = supervisorScope {
-        val deferred = peers
+        peers
             .map { it.id }
             .map { id ->
                 async {
@@ -147,8 +146,8 @@ class KadDHTExtension(
                     streamStore[id]
                 }
             }
-
-        return@supervisorScope awaitAll(*deferred.toTypedArray()).filterNotNull()
+            .awaitAll()
+            .filterNotNull()
     }
 
     private suspend fun connectTo(
