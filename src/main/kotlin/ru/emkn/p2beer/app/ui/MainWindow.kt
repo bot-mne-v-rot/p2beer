@@ -52,7 +52,7 @@ class MainWindow(private val me: Account) {
                                     MessageDialog.showMessageDialog(
                                             textGUI,
                                             "Copy your key" +
-                                                    "to clipboard and share it with your friends",
+                                                    " to clipboard and share it with your friends",
                                             byteArrayToString(me.userInfo.pubKey),
                                             MessageDialogButton.OK,
 
