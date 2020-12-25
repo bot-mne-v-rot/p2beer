@@ -3,15 +3,21 @@ package ru.emkn.p2beer.app.ui
 import com.googlecode.lanterna.TerminalSize
 import com.googlecode.lanterna.TextColor
 import com.googlecode.lanterna.gui2.*
+import com.googlecode.lanterna.gui2.dialogs.ActionListDialogBuilder
+import com.googlecode.lanterna.gui2.dialogs.MessageDialog
+import com.googlecode.lanterna.gui2.dialogs.MessageDialogBuilder
+import com.googlecode.lanterna.gui2.dialogs.MessageDialogButton
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory
 import ru.emkn.p2beer.app.client.chat.ChatImpl
 import ru.emkn.p2beer.app.client.user.Account
 import ru.emkn.p2beer.app.client.user.FriendComparator
 import ru.emkn.p2beer.app.client.user.FriendsManager
+import ru.emkn.p2beer.app.client.util.byteArrayToString
 import ru.emkn.p2beer.app.p2bLib.FriendsManagerImpl
 import java.io.IOException
 
-class MainWindow (private val me: Account) {
+
+class MainWindow(private val me: Account) {
     fun runMainWindow() {
         try {
             /**
@@ -34,7 +40,37 @@ class MainWindow (private val me: Account) {
             mainPanel.layoutManager = BorderLayout()
 
             /**
-             * The first sub-element of the mane Panel is a chatList panel
+             * On the top of the Main Panel Settings are located
+             * They contain friend search and copy MyPubKey feature
+             */
+
+            mainPanel.addComponent(
+                    Button("Settings") {
+                        ActionListDialogBuilder()
+                                .setTitle("Settings")
+                                .addAction("Copy my key") {
+                                    MessageDialog.showMessageDialog(
+                                            textGUI,
+                                            "Copy your key" +
+                                                    "to clipboard and share it with your friends",
+                                            byteArrayToString(me.userInfo.pubKey),
+                                            MessageDialogButton.OK,
+
+                                    )
+                                }
+                                .addAction("Add friend by their key") {
+                                    val searchWindow = FriendSearchWindow(textGUI)
+                                    searchWindow.build()
+                                }
+                                .setExtraWindowHints(null)
+                                .setExtraWindowHints(setOf(Window.Hint.MODAL))
+                                .build()
+                                .showDialog(textGUI)
+                    }.setLayoutData(BorderLayout.Location.TOP)
+            )
+
+            /**
+             * The first sub-element of the main Panel is a chatList panel
              * It uses a Linear Layout so that the list of dialogs with friends
              * is easy to customize and operate with
              */

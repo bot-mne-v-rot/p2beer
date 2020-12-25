@@ -29,3 +29,7 @@ fun wrapText(textviewWidth : Int, msg: String) : String {
 
     return (sentence.replaceFirst(" ", "")+temp)
 }
+
+fun byteArrayToString(key: ByteArray) : String =  Base64.getEncoder().encodeToString(key)
+
+fun stringToByteArray(key: String) : ByteArray = Base64.getDecoder().decode(key)
