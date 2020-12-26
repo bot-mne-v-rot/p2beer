@@ -92,7 +92,7 @@ class BTreeTests {
             File("src/test/kotlin/chat/messages.bin").delete()
         }
 
-        val cases = listOf(10 , 100, 1000)
+        val cases = listOf(1, 10 , 100, 500)
 
         val bTree = BTree(5,"src/test/kotlin/chat/index.bin", "src/test/kotlin/chat/messages.bin")
 
@@ -106,7 +106,7 @@ class BTreeTests {
         return IntStream.range(0, cases.size).mapToObj { n ->
             val position = Random.nextInt(0, cases[n])
             DynamicTest.dynamicTest("Test getKNextMessage with ${cases[n]} messages") {
-                assertEquals(addedMessages.subList(position, position + cases[n]).toList(),
+                assertEquals(addedMessages.subList(position + 1, position + cases[n] + 1).toList(),
                         getKNextMessages(bTree, addedMessages[position], cases[n]))
             }
         }
@@ -119,7 +119,7 @@ class BTreeTests {
             File("src/test/kotlin/chat/messages.bin").delete()
         }
 
-        val cases = listOf(1, 10, 100, 1000)
+        val cases = listOf(1, 10, 100, 500)
 
         val bTree = BTree(5,"src/test/kotlin/chat/index.bin", "src/test/kotlin/chat/messages.bin")
 
@@ -131,9 +131,9 @@ class BTreeTests {
         addedMessages.sortWith(MessageComparator)
 
         return IntStream.range(0, cases.size).mapToObj { n ->
-            val position = Random.nextInt(cases[n] - 1, addedMessages.size - 1)
+            val position = Random.nextInt(cases[n], addedMessages.size - 1)
             DynamicTest.dynamicTest("Test getKPreviousMessage with ${cases[n]} messages") {
-                assertEquals(addedMessages.subList(position - cases[n] + 1, position + 1).toList().reversed(),
+                assertEquals(addedMessages.subList(position - cases[n], position).toList().reversed(),
                         getKPreviousMessages(bTree, addedMessages[position], cases[n]))
             }
         }
