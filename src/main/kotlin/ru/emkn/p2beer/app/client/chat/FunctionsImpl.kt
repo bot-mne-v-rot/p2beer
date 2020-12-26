@@ -138,6 +138,9 @@ fun findKPreviousMessages(bTree: BTree, node: Node, message: Message, k: Int): L
     return messages
 }
 
+/**
+ * Recursively searches for last message.
+ */
 fun findLastMessage(bTree: BTree, node: Node): Message {
     if (node.isLeaf)
         return readMessage(bTree.fileWithMessages, node.pointersToMessages.last()) // last message in this node

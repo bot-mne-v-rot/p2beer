@@ -31,11 +31,11 @@ class DialogWindow(
             val chatPanel = Panel()
 
             /**
-             * Time for the second big part of mainPanel
-             * It's called chatPanel
+             * Time for the second big part of mainPanel.
+             * It's called chatPanel.
              * It's Location is set to center and that's
              * how it takes the whole space of the screen,
-             * that is not yet taken by any other elements
+             * that is not yet taken by any other elements.
              */
 
             chatPanel.layoutManager = BorderLayout()
@@ -83,9 +83,9 @@ class DialogWindow(
             )
 
             /**
-             * In ChatPanel we need to have a textBox to type th message
-             * Its size is defined by the space given to ChatPanel
-             * Its stretched out to the whole width of the panel
+             * In ChatPanel we need to have a textBox to type th message.
+             * Its size is defined by the space given to ChatPanel.
+             * Its stretched out to the whole width of the panel.
              */
 
             val bottomMessageInputBox = Panel()
@@ -99,7 +99,7 @@ class DialogWindow(
             )
 
             /**
-             * Initialize btree to efficiently save data
+             * Initialize btree to efficiently save data.
              */
 
             val messageField = TextBox(
@@ -123,7 +123,7 @@ class DialogWindow(
 
             /**
              * messageField is lowered to the bottom
-             * of the chatPanel by the function below
+             * of the chatPanel by the function below.
              */
 
             chatPanel.addComponent(
@@ -185,26 +185,26 @@ class DialogWindow(
         messageField: TextBox
     ) {
         /**
-         * Send message
+         * Send message.
          */
 
         // TODO: add call of the function that sends a message
         //  and save the message on success
 
         /**
-         * Save message to file
+         * Save message to file.
          */
 
         addMessage(bTree, message)
 
         /**
-         * Update the time of the last message in the
+         * Update the time of the last message in the.
          */
 
         openChat.friend.lastMessageTimeStamp = System.currentTimeMillis()
 
         /**
-         * Update amount of messages sent to this friend
+         * Update amount of messages sent to this friend.
          */
 
         openChat.friend.messagesCount += 1
@@ -213,7 +213,7 @@ class DialogWindow(
          * The ability of modifying the textField
          * with messages is blocked by default, so we
          * disable it for the time of adding a new
-         * message
+         * message.
          */
 
         messages.setValidationPattern(null)
@@ -228,7 +228,7 @@ class DialogWindow(
         messageField.text = ""
 
         /**
-         * And block it again
+         * And block it again.
          */
 
         messages.setValidationPattern(Pattern.compile("/(?:)/"))
