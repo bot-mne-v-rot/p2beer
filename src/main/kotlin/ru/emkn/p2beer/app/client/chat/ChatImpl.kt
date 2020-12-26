@@ -4,10 +4,11 @@ import ru.emkn.p2beer.app.client.user.Friend
 import kotlin.collections.ArrayDeque
 
 //TODO: Add pubkey to ChatImpl constructor
-class ChatImpl (val friend : Friend) : Chat {
+class ChatImpl(val friend: Friend) : Chat {
 
-    private val loadedMessages : ArrayDeque<Message> = ArrayDeque()
-    lateinit var firstLoadedMessage : Message
+    private val loadedMessages: ArrayDeque<Message> = ArrayDeque()
+    lateinit var firstLoadedMessage: Message
+    lateinit var firstMessage: Message
     var loadedMessagesCount = 0
 
     /**
@@ -19,5 +20,5 @@ class ChatImpl (val friend : Friend) : Chat {
         this.loadedMessages.addFirst(message)
     }
 
-    override fun toString () = this.friend.userInfo.userName
+    override fun toString() = this.friend.userInfo.userName
 }

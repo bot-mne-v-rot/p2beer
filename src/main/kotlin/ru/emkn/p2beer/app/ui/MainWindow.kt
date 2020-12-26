@@ -9,9 +9,7 @@ import com.googlecode.lanterna.gui2.dialogs.MessageDialogBuilder
 import com.googlecode.lanterna.gui2.dialogs.MessageDialogButton
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory
 import ru.emkn.p2beer.app.client.chat.ChatImpl
-import ru.emkn.p2beer.app.client.user.Account
-import ru.emkn.p2beer.app.client.user.FriendComparator
-import ru.emkn.p2beer.app.client.user.FriendsManager
+import ru.emkn.p2beer.app.client.user.*
 import ru.emkn.p2beer.app.client.util.byteArrayToString
 import ru.emkn.p2beer.app.p2bLib.FriendsManagerImpl
 import java.io.IOException
@@ -29,6 +27,13 @@ class MainWindow(private val me: Account) {
             val textGUI: WindowBasedTextGUI = MultiWindowTextGUI(screen, TextColor.ANSI.CYAN)
 
             val window: Window = BasicWindow("Dialog Window")
+
+            /**
+             * Check if during the previous close of the app
+             * we did it correctly
+             */
+
+            validateUserDataFile()
 
             /**
              * Creating a Panel with a BorderLayout
@@ -56,7 +61,7 @@ class MainWindow(private val me: Account) {
                                             byteArrayToString(me.userInfo.pubKey),
                                             MessageDialogButton.OK,
 
-                                    )
+                                            )
                                 }
                                 .addAction("Add friend by their key") {
                                     val searchWindow = FriendSearchWindow(textGUI)
@@ -103,7 +108,7 @@ class MainWindow(private val me: Account) {
             val friendsManager = FriendsManagerImpl()
 
             val actionListBox = ActionListBox(TerminalSize(20, 10))
-            var chat : DialogWindow
+            var chat: DialogWindow
             for (friend in me.friends.sortedWith(FriendComparator)) {
 
                 /**
@@ -154,5 +159,22 @@ class MainWindow(private val me: Account) {
         } catch (e: IOException) {
             e.printStackTrace()
         }
+    }
+
+    private fun validateUserDataFile() {
+        val tempChatStorage = TempChatStorage()
+        tempChatStorage.loadFromFile()
+
+        val jsonStorage = JSONUserDataStorageImpl()
+        val myData = jsonStorage.loadMyData()
+
+        for (friend in myData.friends) {
+            if (friend.userInfo.pubKey.contentEquals(tempChatStorage.publicKey)) {
+                friend.messagesCount = tempChatStorage.messagesCount
+                friend.lastMessageTimeStamp = tempChatStorage.lastMessageTimeStamp
+            }
+        }
+
+        jsonStorage.saveMyData(myData)
     }
 }

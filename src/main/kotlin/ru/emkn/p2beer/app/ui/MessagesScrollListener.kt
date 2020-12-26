@@ -13,9 +13,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.Pattern
 
 class MessagesScrollListener(
-    private val textBox: TextBox,
-    private val bTree: BTree,
-    private val chat: ChatImpl
+        private val textBox: TextBox,
+        private val bTree: BTree,
+        private val chat: ChatImpl
 ) : WindowListener {
     override fun onInput(basePane: Window?, keyStroke: KeyStroke, deliverEvent: AtomicBoolean?) {
         if (keyStroke.keyType == KeyType.ArrowUp)
@@ -36,15 +36,13 @@ class MessagesScrollListener(
     }
 
     private fun loadNewMessages() {
-        val messageList = getKPreviousMessages(
-            bTree,
-            chat.firstLoadedMessage,
-            minOf(
-                messagesLoadByOnceNum,
-                getNumberOfMessages(bTree) - chat.loadedMessagesCount + 1
+        if (getNumberOfMessages(bTree) > chat.loadedMessagesCount) {
+            val messageList = getKPreviousMessages(
+                    bTree,
+                    chat.firstLoadedMessage,
+                    minOf(messagesLoadByOnceNum)
             )
-        )
-        if (messageList.isNotEmpty()) {
+
             chat.firstLoadedMessage = messageList.last()
             chat.loadedMessagesCount += messageList.size
             val text = textBox.text
@@ -52,8 +50,8 @@ class MessagesScrollListener(
 
             var newText = ""
 
-            for (index in 0 until messageList.reversed().size - 1) {
-                newText += messageToString(messageList.reversed()[index]) + "\n"
+            for (element in messageList.reversed()) {
+                newText += messageToString(element) + "\n"
             }
 
             newText += text

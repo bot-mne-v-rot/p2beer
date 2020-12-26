@@ -6,24 +6,34 @@ import ru.emkn.p2beer.app.client.chat.*
 import ru.emkn.p2beer.app.client.user.Account
 import ru.emkn.p2beer.app.client.user.FriendConnection
 import ru.emkn.p2beer.app.client.user.JSONUserDataStorageImpl
+import ru.emkn.p2beer.app.client.user.TempChatStorage
 import ru.emkn.p2beer.app.client.util.*
 import java.io.File
 import java.util.regex.Pattern
 
 class DialogWindow(
-    private val openChat: ChatImpl,
-    private val me: Account,
-    private val friendConnection: FriendConnection
+        private val openChat: ChatImpl,
+        private val me: Account,
+        private val friendConnection: FriendConnection
 ) {
 
     fun addDialogWindow(
-        actionListBox: ActionListBox,
-        textGUI: WindowBasedTextGUI
+            actionListBox: ActionListBox,
+            textGUI: WindowBasedTextGUI
     ) {
 
         actionListBox.addItem(openChat.toString()) {
             val window: Window = BasicWindow("Dialog Window")
             window.setHints(listOf(Window.Hint.EXPANDED))
+
+            /**
+             * Storage to save temporary data while messaging
+             */
+
+            val tempStorage = TempChatStorage()
+            tempStorage.publicKey = openChat.friend.userInfo.pubKey
+            tempStorage.messagesCount = openChat.friend.messagesCount
+            tempStorage.lastMessageTimeStamp = openChat.friend.lastMessageTimeStamp
 
             val mainPanel = Panel()
             mainPanel.layoutManager = BorderLayout()
@@ -41,33 +51,34 @@ class DialogWindow(
             chatPanel.layoutManager = BorderLayout()
 
             mainPanel.addComponent(
-                chatPanel.withBorder(Borders.doubleLineBevel(openChat.toString()))
-                    .setLayoutData(BorderLayout.Location.CENTER)
+                    chatPanel.withBorder(Borders.doubleLineBevel(openChat.toString()))
+                            .setLayoutData(BorderLayout.Location.CENTER)
             )
 
             val messages = TextBox(
-                TerminalSize(20, 9)
+                    TerminalSize(20, 9)
             ).setLayoutData(
-                LinearLayout.createLayoutData(LinearLayout.Alignment.Fill)
+                    LinearLayout.createLayoutData(LinearLayout.Alignment.Fill)
             )
 
             checkIfChatRegistered(openChat.toString())
 
             val bTree = BTree(
-                5,
-                "src/main/kotlin/ru/emkn/p2beer/app/resources/chatlists/$openChat/index.bin",
-                "src/main/kotlin/ru/emkn/p2beer/app/resources/chatlists/$openChat/messages.bin"
+                    5,
+                    "src/main/kotlin/ru/emkn/p2beer/app/resources/chatlists/$openChat/index.bin",
+                    "src/main/kotlin/ru/emkn/p2beer/app/resources/chatlists/$openChat/messages.bin"
             )
 
             if (getNumberOfMessages(bTree) != 0) {
 
                 val messageList = getKLastMessages(
-                    bTree,
-                    minOf(getNumberOfMessages(bTree), messagesLoadByOnceNum)
+                        bTree,
+                        minOf(getNumberOfMessages(bTree), messagesLoadByOnceNum)
                 )
 
                 openChat.firstLoadedMessage = messageList.last()
                 openChat.loadedMessagesCount += messageList.size
+                openChat.firstMessage = openChat.firstLoadedMessage
 
                 for (message in messageList.reversed()) {
                     messages.addLine(messageToString(message))
@@ -79,7 +90,7 @@ class DialogWindow(
 
 
             chatPanel.addComponent(
-                messages.setLayoutData(BorderLayout.Location.CENTER)
+                    messages.setLayoutData(BorderLayout.Location.CENTER)
             )
 
             /**
@@ -92,10 +103,10 @@ class DialogWindow(
             bottomMessageInputBox.layoutManager = LinearLayout()
 
             bottomMessageInputBox.addComponent(
-                Separator(Direction.HORIZONTAL)
-                    .setLayoutData(
-                        GridLayout.createHorizontallyFilledLayoutData(2)
-                    )
+                    Separator(Direction.HORIZONTAL)
+                            .setLayoutData(
+                                    GridLayout.createHorizontallyFilledLayoutData(2)
+                            )
             )
 
             /**
@@ -103,22 +114,24 @@ class DialogWindow(
              */
 
             val messageField = TextBox(
-                TerminalSize(20, 3),
-                "Type message..."
+                    TerminalSize(20, 3),
+                    "Type message..."
             ).setLayoutData(
-                LinearLayout.createLayoutData(LinearLayout.Alignment.Fill)
+                    LinearLayout.createLayoutData(LinearLayout.Alignment.Fill)
             )
             bottomMessageInputBox.addComponent(messageField)
 
             val sendBtn = Button("Send") {
-                val msg = createMessage(messageField.text)
-                sendMessage(bTree, msg, messages, messageField)
+                if(messageField.text.trim().isNotEmpty()) {
+                    val msg = createMessage(messageField.text.trim())
+                    sendMessage(bTree, msg, messages, messageField, tempStorage)
+                }
             }
 
             bottomMessageInputBox.addComponent(
-                sendBtn.setLayoutData(
-                    LinearLayout.createLayoutData(LinearLayout.Alignment.End)
-                )
+                    sendBtn.setLayoutData(
+                            LinearLayout.createLayoutData(LinearLayout.Alignment.End)
+                    )
             )
 
             /**
@@ -127,15 +140,13 @@ class DialogWindow(
              */
 
             chatPanel.addComponent(
-                bottomMessageInputBox.setLayoutData(BorderLayout.Location.BOTTOM)
+                    bottomMessageInputBox.setLayoutData(BorderLayout.Location.BOTTOM)
             )
 
             val button = Button("Close") {
 
                 /**
                  * Update data about Friend's last message
-                 * TODO: Handle situations when the window
-                 *  is closed not properly
                  */
 
                 val dataStorage = JSONUserDataStorageImpl()
@@ -148,13 +159,14 @@ class DialogWindow(
                 }
 
                 dataStorage.saveMyData(me)
+                clearChatLoadInfo()
                 window.close()
             }
 
             mainPanel.addComponent(
-                button.setLayoutData(
-                    GridLayout.createHorizontallyEndAlignedLayoutData(2)
-                ).setLayoutData(BorderLayout.Location.BOTTOM)
+                    button.setLayoutData(
+                            GridLayout.createHorizontallyEndAlignedLayoutData(2)
+                    ).setLayoutData(BorderLayout.Location.BOTTOM)
             )
 
             val listener = MessagesScrollListener(messages, bTree, openChat)
@@ -165,24 +177,23 @@ class DialogWindow(
         }
     }
 
-
-
-    private fun createMessage(message: String) : Message {
+    private fun createMessage(message: String): Message {
         val pk = me.userInfo.pubKey
-        val twoBytesOfUserID : UShort = (pk[pk.size - 1] + pk[pk.size - 2]).toUShort()
+        val twoBytesOfUserID: UShort = (pk[pk.size - 1] + pk[pk.size - 2]).toUShort()
         val info = MessageId(
-            openChat.friend.messagesCount + 1,
-            System.currentTimeMillis(),
-            twoBytesOfUserID
+                openChat.friend.messagesCount + 1,
+                System.currentTimeMillis(),
+                twoBytesOfUserID
         )
         return Message(message, info, pk)
     }
 
     private fun sendMessage(
-        bTree: BTree,
-        message: Message,
-        messages: TextBox,
-        messageField: TextBox
+            bTree: BTree,
+            message: Message,
+            messages: TextBox,
+            messageField: TextBox,
+            tempStorage: TempChatStorage
     ) {
         /**
          * Send message.
@@ -210,6 +221,14 @@ class DialogWindow(
         openChat.friend.messagesCount += 1
 
         /**
+         * Update data in temporary file.
+         */
+
+        tempStorage.lastMessageTimeStamp = openChat.friend.lastMessageTimeStamp
+        tempStorage.messagesCount += 1
+        tempStorage.saveToFile()
+
+        /**
          * The ability of modifying the textField
          * with messages is blocked by default, so we
          * disable it for the time of adding a new
@@ -233,6 +252,11 @@ class DialogWindow(
 
         messages.setValidationPattern(Pattern.compile("/(?:)/"))
     }
+
+    private fun clearChatLoadInfo() {
+        openChat.loadedMessagesCount = 0
+        openChat.firstLoadedMessage = openChat.firstMessage
+    }
 }
 
 fun checkIfChatRegistered(userName: String) {
@@ -241,13 +265,13 @@ fun checkIfChatRegistered(userName: String) {
         File(folderName).mkdirs()
 }
 
-fun messageToString(message: Message) : String {
+fun messageToString(message: Message): String {
     //TODO: Optimize textBox to resize messages for proper width
-    return("""
+    return ("""
             |${timestampToDate(message)}
             |   ${wrapText(50, message.text)}
             |"""
-        .trimMargin()
+            .trimMargin()
             )
     //TODO: Change colors of field Sender and time
 
