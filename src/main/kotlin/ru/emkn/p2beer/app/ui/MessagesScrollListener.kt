@@ -11,6 +11,7 @@ import ru.emkn.p2beer.app.client.chat.*
 import ru.emkn.p2beer.app.client.util.messagesLoadByOnceNum
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.Pattern
+/*
 
 class MessagesScrollListener(
         private val textBox: TextBox,
@@ -64,3 +65,5 @@ class MessagesScrollListener(
         }
     }
 }
+
+ */

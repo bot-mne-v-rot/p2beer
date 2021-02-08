@@ -10,7 +10,7 @@ import ru.emkn.p2beer.app.client.user.TempChatStorage
 import ru.emkn.p2beer.app.client.util.*
 import java.io.File
 import java.util.regex.Pattern
-
+/*
 class DialogWindow(
         private val openChat: ChatImpl,
         private val me: Account,
@@ -63,6 +63,7 @@ class DialogWindow(
 
             checkIfChatRegistered(openChat.toString())
 
+            /*
             val bTree = BTree(
                     5,
                     "src/main/kotlin/ru/emkn/p2beer/app/resources/chatlists/$openChat/index.bin",
@@ -84,6 +85,8 @@ class DialogWindow(
                     messages.addLine(messageToString(message))
                 }
             }
+            */
+
 
             messages.setValidationPattern(Pattern.compile("/(?:)/"))
             messages.setCaretPosition(messages.lineCount, 0)
@@ -277,3 +280,5 @@ fun messageToString(message: Message): String {
 
     //TODO: add author to the shown message
 }
+
+*/

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
 import ru.emkn.p2beer.app.client.chat.*
 import java.io.File
+import java.io.RandomAccessFile
 import java.util.stream.IntStream
 import java.util.stream.Stream
 import kotlin.random.Random
@@ -29,38 +30,73 @@ fun createMessage(): Message {
     return Message(text, info, publicKey)
 }
 
-fun checkValid(bTree: BTree, node: Node, leftMessage: Message?, rightMessage: Message?): Boolean {
-    if (node.isLeaf && node.pointersToChildren.size > 0) {
+fun validateBTree(bTree: BTree,
+                  node: Node,
+                  leftMessage: Message?,
+                  rightMessage: Message?): Boolean {
+    if (node.isLeaf() && node.pointersToChildren.size > 0)
         return false
-    }
-    if (!node.isLeaf && node.pointersToMessages.size + 1 != node.pointersToChildren.size) {
+    if (!node.isLeaf() && node.pointersToMessages.size + 1 != node.pointersToChildren.size)
         return false
-    }
-
-    val messagesInThisNode = getMessages(node, bTree.fileWithMessages)
-
-    if (leftMessage != null && !messagesInThisNode.all { it.compareTo(leftMessage) == 1 }) {
+    val messages = node.getMessages(bTree.messagesFile)
+    if ((leftMessage != null && !messages.all { it.compareTo(leftMessage) == 1 }) ||
+            (rightMessage != null && !messages.all { it.compareTo(rightMessage) == -1 }))
         return false
-    }
-    if (rightMessage != null && !messagesInThisNode.all { it.compareTo(rightMessage) == -1 }) {
-        return false
-    }
 
     var result = true
     for ((index, pointer) in node.pointersToChildren.withIndex()) {
-        val child = getNode(bTree, pointer)
+        val child = bTree.indexFile.readNode(pointer, bTree.maxNumberOfChildren)
         val childResult = when(index) {
-            0 -> checkValid(bTree, child, null, messagesInThisNode.first())
-            node.pointersToChildren.lastIndex -> checkValid(bTree, child, messagesInThisNode.last(), null)
-            else -> checkValid(bTree, child, messagesInThisNode[index - 1], messagesInThisNode[index])
+            0 -> validateBTree(bTree, child, null, messages.first())
+            node.pointersToChildren.lastIndex -> validateBTree(bTree, child, messages.last(), null)
+            else -> validateBTree(bTree, child, messages[index - 1], messages[index])
         }
         result = result and childResult
     }
     return result
 }
 
-class BTreeTests {
+/*
+fun printBTree(bTree: BTree, node: Node) {
+    println("We are in node ${node.positionInIndexFile}")
+    print("Messages: ")
+    val messages = node.getMessages(bTree.messagesFile)
+    for (message in messages)
+        print("${message.info.timestamp} ")
+    print("\nChildren: ")
+    for (pointer in node.pointersToChildren)
+        print("$pointer ")
+    print("\n\n")
+    for (pointer in node.pointersToChildren)
+        printBTree(bTree, bTree.indexFile.readNode(pointer, bTree.maxNumberOfChildren))
+}*/
 
+
+class BTreeTests {
+    @TestFactory
+    fun `check addMessages`(): Stream<DynamicTest> {
+        if (File("src/test/kotlin/chat/index.bin").exists()) {
+            File("src/test/kotlin/chat/index.bin").delete()
+            File("src/test/kotlin/chat/messages.bin").delete()
+        }
+
+        val cases = listOf(20)//, 20, 100, 500, 1000, 2000)
+        return IntStream.range(0, cases.size).mapToObj { n ->
+            val bTree = BTree(10,"src/test/kotlin/chat/index.bin", "src/test/kotlin/chat/messages.bin")
+
+            repeat(cases[n]) {
+                bTree.addMessage(createMessage())
+            }
+
+            //printBTree(bTree, bTree.root)
+
+            DynamicTest.dynamicTest("Test addMessage with ${cases[n]} messages") {
+                assertTrue(validateBTree(bTree, bTree.root, null, null))
+            }
+        }
+    }
+
+    /*
     @TestFactory
     fun `check addMessages`(): Stream<DynamicTest> {
         if (File("src/test/kotlin/chat/index.bin").exists()) {
@@ -84,7 +120,8 @@ class BTreeTests {
             }
         }
     }
-
+*/
+    /*
     @TestFactory
     fun `check getKNextMessages`(): Stream<DynamicTest> {
         if (File("src/test/kotlin/chat/index.bin").exists()) {
@@ -199,5 +236,5 @@ class BTreeTests {
                         getKLastMessages(bTree, cases[n]))
             }
         }
-    }
+    }*/
 }

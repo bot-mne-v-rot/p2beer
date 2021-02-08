@@ -14,7 +14,7 @@ import ru.emkn.p2beer.app.client.util.byteArrayToString
 import ru.emkn.p2beer.app.p2bLib.FriendsManagerImpl
 import java.io.IOException
 
-
+/*
 class MainWindow(private val me: Account) {
     fun runMainWindow() {
         try {
@@ -178,3 +178,5 @@ class MainWindow(private val me: Account) {
         jsonStorage.saveMyData(myData)
     }
 }
+
+*/

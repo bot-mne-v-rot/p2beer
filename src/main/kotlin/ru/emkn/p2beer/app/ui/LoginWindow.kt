@@ -18,6 +18,8 @@ import kotlin.random.Random
  * Main entry point.
  */
 
+/*
+
 fun main(args: Array<String>) {
 
     if (File(userInfoPath).exists()) {
@@ -195,3 +197,5 @@ fun tryToParseUserData () : Account {
     val dataStorage = JSONUserDataStorageImpl()
     return dataStorage.loadMyData()
 }
+
+ */

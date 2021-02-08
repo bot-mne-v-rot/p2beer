@@ -2,26 +2,70 @@ package ru.emkn.p2beer.app.client.chat
 
 import java.io.RandomAccessFile
 
-fun readMessage(fileWithMessages: RandomAccessFile, start: Long): Message {
-    fileWithMessages.seek(start)
+fun RandomAccessFile.readMessage(position: Long): Message {
+    this.seek(position)
 
-    val buffer = ByteArray(fileWithMessages.readInt())
-    fileWithMessages.read(buffer)
-
+    val buffer = ByteArray(this.readInt())
+    this.read(buffer)
     val text = buffer.decodeToString()
 
-    val messageId = fileWithMessages.readLong()
-    val timeStamp = fileWithMessages.readLong()
-    val twoBytesOfUserId = ((fileWithMessages.read() shl 8) or fileWithMessages.read()).toUShort()
+    val messageId = this.readLong()
+    val timeStamp = this.readLong()
+    val twoBytesOfUserId = ((this.read() shl 8) or this.read()).toUShort()
 
     val info = MessageId(messageId, timeStamp, twoBytesOfUserId)
 
     val sender = ByteArray(32)
-    fileWithMessages.read(sender)
+    this.read(sender)
 
     return Message(text, info, sender)
 }
 
+fun RandomAccessFile.writeMessageToTheEnd(message: Message): Long {
+    val position = this.length()
+    this.seek(position)
+
+    this.writeInt(message.text.toByteArray().size)
+    this.write(message.text.toByteArray())
+
+    this.writeLong(message.info.messageID)
+    this.writeLong(message.info.timestamp)
+
+    this.write(message.info.twoBytesOfUserID.toInt() shr 8)
+    this.write(message.info.twoBytesOfUserID.toInt() shr 0)
+
+    this.write(message.sender)
+    return position
+}
+
+fun RandomAccessFile.readPointers(position: Long, maxNumberOfPointers: Int): MutableList<Long> {
+    this.seek(position)
+    val pointers = mutableListOf<Long>()
+    for (i in 0 until maxNumberOfPointers) {
+        val pointer = this.readLong()
+        if (pointer < 0) break else pointers.add(pointer)
+    }
+    return pointers
+}
+
+fun RandomAccessFile.readNode(position: Long, maxNumberOfChildren: Int): Node =
+    Node(position,
+        this.readPointers(position, maxNumberOfChildren - 1),
+        this.readPointers(position + (maxNumberOfChildren - 1) * Long.SIZE_BYTES, maxNumberOfChildren),
+        maxNumberOfChildren)
+
+fun RandomAccessFile.writePointers(pointers: MutableList<Long>, maxNumberOfPointers: Int) {
+    for (i in 0 until maxNumberOfPointers)
+        this.writeLong(if (i < pointers.size) pointers[i] else -1)
+}
+
+fun RandomAccessFile.writeNode(node: Node) {
+    this.seek(node.positionInIndexFile)
+    this.writePointers(node.pointersToMessages, node.maxNumberOfChildren - 1)
+    this.writePointers(node.pointersToChildren, node.maxNumberOfChildren)
+}
+
+/*
 /**
  * @return list of messages stored in [node]
  */
@@ -33,50 +77,6 @@ fun getMessages(node: Node, fileWithMessages: RandomAccessFile): List<Message> {
     return messages
 }
 
-fun writeMessage(fileWithMessages: RandomAccessFile, message: Message) {
-    fileWithMessages.seek(fileWithMessages.length())
-
-    fileWithMessages.writeInt(message.text.toByteArray().size)
-    fileWithMessages.write(message.text.toByteArray())
-
-    fileWithMessages.writeLong(message.info.messageID)
-    fileWithMessages.writeLong(message.info.timestamp)
-
-    fileWithMessages.write(message.info.twoBytesOfUserID.toInt() shr 8)
-    fileWithMessages.write(message.info.twoBytesOfUserID.toInt() shr 0)
-
-    fileWithMessages.write(message.sender)
-}
-
-/**
- * Read pointers from [fileWithIndex].
- *
- * From some position pointers can equal to -1,
- * which means that they are still uninitialized
- * so we should ignore them.
- */
-fun readPointers(fileWithIndex: RandomAccessFile, start: Long, maxNumberOfPointers: Int): MutableList<Long> {
-    fileWithIndex.seek(start)
-    val pointers = mutableListOf<Long>()
-    for (i in 1..maxNumberOfPointers) {
-        val pointer = fileWithIndex.readLong()
-        if (pointer < 0)
-            break
-        else
-            pointers.add(pointer)
-    }
-    return pointers
-}
-
-fun writePointers(fileWithIndex: RandomAccessFile, start: Long, maxNumberOfPointers: Int, pointers: List<Long>) {
-    fileWithIndex.seek(start)
-    pointers.forEach {
-        fileWithIndex.writeLong(it)
-    }
-    repeat(maxNumberOfPointers - pointers.size) {
-        fileWithIndex.writeLong(-1)
-    }
-}
 
 /**
  * Move [pointers] to right.
@@ -106,18 +106,6 @@ fun readBoolean(fileWithIndex: RandomAccessFile, start: Long): Boolean {
     return fileWithIndex.readBoolean()
 }
 
-/**
- * Starting with [start] position in [fileWithIndex] we have our node:
- *  -> 2 * t - 1 Long values - pointers to messages
- *  -> one Boolean values - isLeaf
- *  -> 2 * t Long values - pointers to children.
- */
-fun getNode(bTree: BTree, start: Long): Node {
-    return Node(start,
-            readPointers(bTree.fileWithIndex, start, 2 * bTree.t - 1),
-            readBoolean(bTree.fileWithIndex, start + (2 * bTree.t - 1) * Long.SIZE_BYTES),
-            readPointers(bTree.fileWithIndex, bTree.fileWithIndex.filePointer, 2 * bTree.t))
-}
 
 fun getRoot(bTree: BTree): Node = getNode(bTree, 0)
 
@@ -159,3 +147,4 @@ fun printBTree(bTree: BTree, node: Node) {
         printBTree(bTree, getNode(bTree, pointerToChild))
     }
 }
+*/

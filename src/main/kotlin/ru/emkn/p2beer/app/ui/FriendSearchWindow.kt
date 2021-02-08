@@ -3,6 +3,7 @@ package ru.emkn.p2beer.app.ui
 import com.googlecode.lanterna.gui2.*
 import java.io.IOException
 
+/*
 class FriendSearchWindow(private val textGUI: WindowBasedTextGUI) {
     fun build() {
         try {
@@ -44,3 +45,5 @@ class FriendSearchWindow(private val textGUI: WindowBasedTextGUI) {
         }
     }
 }
+
+ */
