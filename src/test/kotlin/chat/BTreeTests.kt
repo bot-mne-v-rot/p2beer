@@ -1,11 +1,14 @@
 package chat
 
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
 import ru.emkn.p2beer.app.client.chat.*
+import ru.emkn.p2beer.app.client.chat.bTree.BTree
+import ru.emkn.p2beer.app.client.chat.bTree.Node
+import ru.emkn.p2beer.app.client.chat.bTree.readNode
 import java.io.File
-import java.io.RandomAccessFile
 import java.util.stream.IntStream
 import java.util.stream.Stream
 import kotlin.random.Random
@@ -30,211 +33,123 @@ fun createMessage(): Message {
     return Message(text, info, publicKey)
 }
 
-fun validateBTree(bTree: BTree,
-                  node: Node,
+fun validateBTree(node: Node,
                   leftMessage: Message?,
                   rightMessage: Message?): Boolean {
-    if (node.isLeaf() && node.pointersToChildren.size > 0)
+    if (node.isLeaf && node.pointersToChildren.size > 0)
         return false
-    if (!node.isLeaf() && node.pointersToMessages.size + 1 != node.pointersToChildren.size)
+    if (!node.isLeaf && node.pointersToMessages.size + 1 != node.pointersToChildren.size)
         return false
-    val messages = node.getMessages(bTree.messagesFile)
+    val messages = node.getMessages()
     if ((leftMessage != null && !messages.all { it.compareTo(leftMessage) == 1 }) ||
             (rightMessage != null && !messages.all { it.compareTo(rightMessage) == -1 }))
         return false
 
     var result = true
     for ((index, pointer) in node.pointersToChildren.withIndex()) {
-        val child = bTree.indexFile.readNode(pointer, bTree.maxNumberOfChildren)
+        val child = node.indexFile.readNode(pointer, node.maxNumberOfChildren, node.indexFile, node.messagesFile)
         val childResult = when(index) {
-            0 -> validateBTree(bTree, child, null, messages.first())
-            node.pointersToChildren.lastIndex -> validateBTree(bTree, child, messages.last(), null)
-            else -> validateBTree(bTree, child, messages[index - 1], messages[index])
+            0 -> validateBTree(child, null, messages.first())
+            node.pointersToChildren.lastIndex -> validateBTree(child, messages.last(), null)
+            else -> validateBTree(child, messages[index - 1], messages[index])
         }
         result = result and childResult
     }
     return result
 }
 
-/*
-fun printBTree(bTree: BTree, node: Node) {
-    println("We are in node ${node.positionInIndexFile}")
-    print("Messages: ")
-    val messages = node.getMessages(bTree.messagesFile)
-    for (message in messages)
-        print("${message.info.timestamp} ")
-    print("\nChildren: ")
-    for (pointer in node.pointersToChildren)
-        print("$pointer ")
-    print("\n\n")
-    for (pointer in node.pointersToChildren)
-        printBTree(bTree, bTree.indexFile.readNode(pointer, bTree.maxNumberOfChildren))
-}*/
-
-
 class BTreeTests {
+    private val pathToIndexFile = "src/test/kotlin/chat/index.bin"
+    private val pathToMessagesFile = "src/test/kotlin/chat/messages.bin"
+
+    @BeforeEach
+    fun deleteIfExist() {
+        if (File(pathToIndexFile).exists())
+            File(pathToIndexFile).delete()
+        if (File(pathToMessagesFile).exists())
+            File(pathToMessagesFile).delete()
+    }
+
+    private fun addKMessages(bTree: BTree, k: Int): List<Message> {
+        val addedMessages = mutableListOf<Message>()
+        repeat(k) {
+            addedMessages.add(createMessage())
+            bTree.addMessage(addedMessages.last())
+        }
+        return addedMessages.sortedWith(MessageComparator)
+    }
+
     @TestFactory
     fun `check addMessages`(): Stream<DynamicTest> {
-        if (File("src/test/kotlin/chat/index.bin").exists()) {
-            File("src/test/kotlin/chat/index.bin").delete()
-            File("src/test/kotlin/chat/messages.bin").delete()
-        }
-
-        val cases = listOf(20)//, 20, 100, 500, 1000, 2000)
+        val cases = listOf(1, 10, 2000)
         return IntStream.range(0, cases.size).mapToObj { n ->
-            val bTree = BTree(10,"src/test/kotlin/chat/index.bin", "src/test/kotlin/chat/messages.bin")
+            val bTree = BTree(10,pathToIndexFile, pathToMessagesFile)
 
-            repeat(cases[n]) {
-                bTree.addMessage(createMessage())
-            }
-
-            //printBTree(bTree, bTree.root)
+            addKMessages(bTree, cases[n])
 
             DynamicTest.dynamicTest("Test addMessage with ${cases[n]} messages") {
-                assertTrue(validateBTree(bTree, bTree.root, null, null))
+                assertTrue(validateBTree(bTree.root, null, null))
             }
         }
     }
 
-    /*
-    @TestFactory
-    fun `check addMessages`(): Stream<DynamicTest> {
-        if (File("src/test/kotlin/chat/index.bin").exists()) {
-            File("src/test/kotlin/chat/index.bin").delete()
-            File("src/test/kotlin/chat/messages.bin").delete()
-        }
-
-        val cases = listOf(10, 20, 100, 500, 1000, 2000)
-
-        return IntStream.range(0, cases.size).mapToObj { n ->
-            val bTree = BTree(5,"src/test/kotlin/chat/index.bin", "src/test/kotlin/chat/messages.bin")
-
-            repeat(cases[n]) {
-                addMessage(bTree, createMessage())
-            }
-
-            val root = getRoot(bTree)
-
-            DynamicTest.dynamicTest("Test addMessage with ${cases[n]} messages") {
-                assertTrue(checkValid(bTree, root, null, null))
-            }
-        }
-    }
-*/
-    /*
     @TestFactory
     fun `check getKNextMessages`(): Stream<DynamicTest> {
-        if (File("src/test/kotlin/chat/index.bin").exists()) {
-            File("src/test/kotlin/chat/index.bin").delete()
-            File("src/test/kotlin/chat/messages.bin").delete()
-        }
-
-        val cases = listOf(1, 10 , 100, 500)
-
-        val bTree = BTree(5,"src/test/kotlin/chat/index.bin", "src/test/kotlin/chat/messages.bin")
-
-        val addedMessages = mutableListOf<Message>()
-        repeat(2000) {
-            addedMessages.add(createMessage())
-            addMessage(bTree, addedMessages.last())
-        }
-        addedMessages.sortWith(MessageComparator)
+        val cases = listOf(1, 10, 100, 500)
+        val bTree = BTree(10, pathToIndexFile, pathToMessagesFile)
+        val addedMessages = addKMessages(bTree, 2000)
 
         return IntStream.range(0, cases.size).mapToObj { n ->
             val position = Random.nextInt(0, cases[n])
             DynamicTest.dynamicTest("Test getKNextMessage with ${cases[n]} messages") {
                 assertEquals(addedMessages.subList(position + 1, position + cases[n] + 1).toList(),
-                        getKNextMessages(bTree, addedMessages[position], cases[n]))
+                        bTree.getKNextMessages(addedMessages[position], cases[n]))
             }
         }
     }
 
     @TestFactory
     fun `check getKPreviousMessages`(): Stream<DynamicTest> {
-        if (File("src/test/kotlin/chat/index.bin").exists()) {
-            File("src/test/kotlin/chat/index.bin").delete()
-            File("src/test/kotlin/chat/messages.bin").delete()
-        }
-
         val cases = listOf(1, 10, 100, 500)
-
-        val bTree = BTree(5,"src/test/kotlin/chat/index.bin", "src/test/kotlin/chat/messages.bin")
-
-        val addedMessages = mutableListOf<Message>()
-        repeat(2000) {
-            addedMessages.add(createMessage())
-            addMessage(bTree, addedMessages.last())
-        }
-        addedMessages.sortWith(MessageComparator)
+        val bTree = BTree(10, pathToIndexFile, pathToMessagesFile)
+        val addedMessages = addKMessages(bTree, 2000)
 
         return IntStream.range(0, cases.size).mapToObj { n ->
             val position = Random.nextInt(cases[n], addedMessages.size - 1)
             DynamicTest.dynamicTest("Test getKPreviousMessage with ${cases[n]} messages") {
-                assertEquals(addedMessages.subList(position - cases[n], position).toList().reversed(),
-                        getKPreviousMessages(bTree, addedMessages[position], cases[n]))
+                assertEquals(addedMessages.subList(position - cases[n], position).toList(),
+                        bTree.getKPreviousMessages(addedMessages[position], cases[n]))
             }
         }
     }
 
     @Test
-    fun `check getNumberOfMessages`() {
-        if (File("src/test/kotlin/chat/index.bin").exists()) {
-            File("src/test/kotlin/chat/index.bin").delete()
-            File("src/test/kotlin/chat/messages.bin").delete()
-        }
-
-        val bTree = BTree(5,"src/test/kotlin/chat/index.bin", "src/test/kotlin/chat/messages.bin")
-
+    fun `check getCurrentNumberOfMessages`() {
+        val bTree = BTree(10, pathToIndexFile, pathToMessagesFile)
         val number = Random.nextInt(10, 1000)
-        repeat(number) {
-            addMessage(bTree, createMessage())
-        }
-
-        assertEquals(number, getNumberOfMessages(bTree))
+        addKMessages(bTree, number)
+        assertEquals(number, bTree.getCurrentNumberOfMessages())
     }
 
     @Test
     fun `check getLastMessage`() {
-        if (File("src/test/kotlin/chat/index.bin").exists()) {
-            File("src/test/kotlin/chat/index.bin").delete()
-            File("src/test/kotlin/chat/messages.bin").delete()
-        }
-
-        val bTree = BTree(5,"src/test/kotlin/chat/index.bin", "src/test/kotlin/chat/messages.bin")
-
-        val addedMessages = mutableListOf<Message>()
-        repeat(Random.nextInt(100, 1000)) {
-            addedMessages.add(createMessage())
-            addMessage(bTree, addedMessages.last())
-        }
-
-        assertEquals(addedMessages.maxWithOrNull(MessageComparator), getLastMessage(bTree))
+        val bTree = BTree(10, pathToIndexFile, pathToMessagesFile)
+        val addedMessages = addKMessages(bTree, Random.nextInt(100, 1000))
+        assertEquals(addedMessages.last(), bTree.getLastMessage())
     }
 
     @TestFactory
     fun `check getKLastMessages`(): Stream<DynamicTest> {
-        if (File("src/test/kotlin/chat/index.bin").exists()) {
-            File("src/test/kotlin/chat/index.bin").delete()
-            File("src/test/kotlin/chat/messages.bin").delete()
-        }
-
-        val cases = listOf(1, 10, 100, 1000)
-
-        val bTree = BTree(5,"src/test/kotlin/chat/index.bin", "src/test/kotlin/chat/messages.bin")
-
-        val addedMessages = mutableListOf<Message>()
-        repeat(2000) {
-            addedMessages.add(createMessage())
-            addMessage(bTree, addedMessages.last())
-        }
-        addedMessages.sortWith(MessageComparator)
+        val cases = listOf(1, 10, 100, 500)
+        val bTree = BTree(10, pathToIndexFile, pathToMessagesFile)
+        val addedMessages = addKMessages(bTree, 2000)
 
         return IntStream.range(0, cases.size).mapToObj { n ->
             val position = addedMessages.size - 1
             DynamicTest.dynamicTest("Test getKLastMessage with ${cases[n]} messages") {
-                assertEquals(addedMessages.subList(position - cases[n] + 1, position + 1).toList().reversed(),
-                        getKLastMessages(bTree, cases[n]))
+                assertEquals(addedMessages.subList(position - cases[n] + 1, position + 1).toList(),
+                        bTree.getKLastMessages(cases[n]))
             }
         }
-    }*/
+    }
 }
