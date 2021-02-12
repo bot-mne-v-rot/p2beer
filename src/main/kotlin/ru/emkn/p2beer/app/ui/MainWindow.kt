@@ -11,7 +11,9 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory
 import ru.emkn.p2beer.app.client.chat.ChatImpl
 import ru.emkn.p2beer.app.client.user.*
 import ru.emkn.p2beer.app.client.util.byteArrayToString
+import ru.emkn.p2beer.app.client.util.temporaryChatDataFile
 import ru.emkn.p2beer.app.p2bLib.FriendsManagerImpl
+import java.io.File
 import java.io.IOException
 
 
@@ -162,19 +164,21 @@ class MainWindow(private val me: Account) {
     }
 
     private fun validateUserDataFile() {
-        val tempChatStorage = TempChatStorage()
-        tempChatStorage.loadFromFile()
+        if(File(temporaryChatDataFile).exists()) {
+            val tempChatStorage = TempChatStorage()
+            tempChatStorage.loadFromFile()
 
-        val jsonStorage = JSONUserDataStorageImpl()
-        val myData = jsonStorage.loadMyData()
+            val jsonStorage = JSONUserDataStorageImpl()
+            val myData = jsonStorage.loadMyData()
 
-        for (friend in myData.friends) {
-            if (friend.userInfo.pubKey.contentEquals(tempChatStorage.publicKey)) {
-                friend.messagesCount = tempChatStorage.messagesCount
-                friend.lastMessageTimeStamp = tempChatStorage.lastMessageTimeStamp
+            for (friend in myData.friends) {
+                if (friend.userInfo.pubKey.contentEquals(tempChatStorage.publicKey)) {
+                    friend.messagesCount = tempChatStorage.messagesCount
+                    friend.lastMessageTimeStamp = tempChatStorage.lastMessageTimeStamp
+                }
             }
-        }
 
-        jsonStorage.saveMyData(myData)
+            jsonStorage.saveMyData(myData)
+        }
     }
 }
