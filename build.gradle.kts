@@ -1,9 +1,12 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import com.google.protobuf.gradle.protobuf
+import com.google.protobuf.gradle.protoc
 
 plugins {
     kotlin("jvm")
     id("com.github.johnrengelman.shadow")
     id("com.dorongold.task-tree") version "1.5"
+    id("com.google.protobuf") version "0.8.15"
 }
 
 group = "ru.emkn"
@@ -11,6 +14,20 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+}
+
+protobuf {
+    protoc {
+        generatedFilesBaseDir = "$projectDir/src/main/kotlin/ru/emkn/p2beer/app/resources/proto"
+    }
+}
+
+sourceSets {
+    main {
+        proto {
+            srcDir("$projectDir/src/main/kotlin/ru/emkn/p2beer/app/resources/protobuf")
+        }
+    }
 }
 
 dependencies {
@@ -36,6 +53,9 @@ dependencies {
     implementation("com.google.guava:guava:30.0-jre")
     // JSON libs
     implementation("com.google.code.gson:gson:2.8.6")
+    // Google protobuf
+    implementation("com.google.protobuf:protobuf-gradle-plugin:0.8.15")
+    implementation("com.google.protobuf:protobuf-java:3.11.0")
 }
 
 tasks.withType(KotlinCompile::class.java) {
