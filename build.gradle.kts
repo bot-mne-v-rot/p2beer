@@ -1,12 +1,11 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import com.google.protobuf.gradle.protobuf
-import com.google.protobuf.gradle.protoc
+import com.google.protobuf.gradle.*
 
 plugins {
     kotlin("jvm")
     id("com.github.johnrengelman.shadow")
     id("com.dorongold.task-tree") version "1.5"
-    id("com.google.protobuf") version "0.8.15"
+    id("com.google.protobuf") version "0.8.14"
 }
 
 group = "ru.emkn"
@@ -14,20 +13,7 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
-}
-
-protobuf {
-    protoc {
-        generatedFilesBaseDir = "$projectDir/src/main/kotlin/ru/emkn/p2beer/app/resources/proto"
-    }
-}
-
-sourceSets {
-    main {
-        proto {
-            srcDir("$projectDir/src/main/kotlin/ru/emkn/p2beer/app/resources/protobuf")
-        }
-    }
+    jcenter()
 }
 
 dependencies {
@@ -54,9 +40,47 @@ dependencies {
     // JSON libs
     implementation("com.google.code.gson:gson:2.8.6")
     // Google protobuf
-    implementation("com.google.protobuf:protobuf-gradle-plugin:0.8.15")
-    implementation("com.google.protobuf:protobuf-java:3.11.0")
+    implementation("com.google.protobuf:protobuf-java:3.13.0")
+    implementation("io.grpc:grpc-stub:1.15.1")
+    implementation("io.grpc:grpc-protobuf:1.15.1")
+    if (JavaVersion.current().isJava9Compatible) {
+        // Workaround for @javax.annotation.Generated
+        // see: https://github.com/grpc/grpc-java/issues/3633
+        implementation("javax.annotation:javax.annotation-api:1.3.1")
+    }
 }
+
+protobuf {
+    protoc {
+        // The artifact spec for the Protobuf Compiler
+        artifact = "com.google.protobuf:protoc:3.6.1"
+    }
+    plugins {
+        // Optional: an artifact spec for a protoc plugin, with "grpc" as
+        // the identifier, which can be referred to in the "plugins"
+        // container of the "generateProtoTasks" closure.
+        id("grpc") {
+            artifact = "io.grpc:protoc-gen-grpc-java:1.15.1"
+        }
+    }
+    generateProtoTasks {
+        ofSourceSet("main").forEach {
+            it.plugins {
+                // Apply the "grpc" plugin whose spec is defined above, without options.
+                id("grpc")
+            }
+        }
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs("src/main/java", "build/generated/source/proto/main/java")
+        }
+    }
+}
+
 
 tasks.withType(KotlinCompile::class.java) {
     kotlinOptions {

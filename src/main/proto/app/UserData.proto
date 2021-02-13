@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package model;
+
+option java_package = "ru.emkn.p2beer.app";
+option java_outer_classname = "UserDataProto";
+
+message UserInfo {
+  bytes pubKey = 1;
+  string userName = 2;
+  int64 lastSeen = 3;
+  bool onlineStatus = 4;
+}
+
+message Friend {
+  UserInfo userInfo = 1;
+  bool isConnection = 2;
+  int64 messagesCount = 3;
+  int64 lastMessageTimeStamp = 4;
+}
+
+message Account {
+  UserInfo userInfo = 1;
+  bytes privateKey = 2;
+  map<string, Friend> friends = 3;
+}
