@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName
 data class Account(
     @SerializedName("userInfo") val userInfo: UserInfo,
     @SerializedName("privateKey") val privateKey: ByteArray,
-    @SerializedName("friends") var friends: Set<Friend>
+    @SerializedName("friends") var friends: Map<String, Friend>
 ) {
 
     /**

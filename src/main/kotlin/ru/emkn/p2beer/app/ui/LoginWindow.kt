@@ -8,7 +8,7 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory
 import ru.emkn.p2beer.app.client.user.Account
 import ru.emkn.p2beer.app.client.user.JSONUserDataStorageImpl
 import ru.emkn.p2beer.app.client.user.UserInfo
-import ru.emkn.p2beer.app.client.util.userInfoPath
+import ru.emkn.p2beer.app.client.util.*
 import java.io.File
 import java.io.IOException
 import java.util.regex.Pattern
@@ -20,7 +20,7 @@ import kotlin.random.Random
 
 fun main(args: Array<String>) {
 
-    if (File(userInfoPath).exists()) {
+    if (File(userInfoPathJSON).exists()) {
 
         /**
          * Tries to parse data from JSON file

@@ -17,7 +17,7 @@ class JSONUserDataStorageImpl : UserDataStorage {
     }
 
     override fun loadMyData() : Account {
-        val jsonString = File(userInfoPath).readText()
+        val jsonString = File(userInfoPathJSON).readText()
 
         return Gson().fromJson(jsonString, Account::class.java)
     }
@@ -37,6 +37,6 @@ class JSONUserDataStorageImpl : UserDataStorage {
          * information about them to a JSON file
          */
 
-        File(userInfoPath).writeText(prettyJsonString)
+        File(userInfoPathJSON).writeText(prettyJsonString)
     }
 }
