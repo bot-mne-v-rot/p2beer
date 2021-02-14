@@ -25,7 +25,10 @@ class JSONSaveDataTests {
                 Random.nextLong(0, 100000),
                 Random.nextLong(0, 100000))
 
-        val me = Account(userInfo, pr, setOf(friend1, friend2))
+        val me = Account(userInfo, pr, mapOf(
+            byteArrayToString(friendInfo1.pubKey) to friend1,
+            byteArrayToString(friendInfo2.pubKey) to friend2)
+        )
 
         val dataStorage : UserDataStorage = JSONUserDataStorageImpl()
 

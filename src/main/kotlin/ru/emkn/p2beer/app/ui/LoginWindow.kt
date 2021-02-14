@@ -121,7 +121,7 @@ fun performLogin() {
                         true
                 )
 
-                val me = Account(info, Random.nextBytes(32), setOf())
+                val me = Account(info, Random.nextBytes(32), mapOf())
                 MessageDialog.showMessageDialog(
                         textGUI,
                         "Hi, ${usernameField.text}",

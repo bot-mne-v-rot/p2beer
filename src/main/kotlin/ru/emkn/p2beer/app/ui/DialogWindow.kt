@@ -151,12 +151,19 @@ class DialogWindow(
 
                 val dataStorage = JSONUserDataStorageImpl()
 
-                for (friend in me.friends) {
-                    if (friend.userInfo.pubKey.contentEquals(openChat.friend.userInfo.pubKey)) {
-                        friend.lastMessageTimeStamp = openChat.friend.lastMessageTimeStamp
-                        friend.messagesCount = openChat.friend.messagesCount
-                    }
-                }
+//                for (friend in me.friends) {
+//                    if (friend.userInfo.pubKey.contentEquals(openChat.friend.userInfo.pubKey)) {
+//                        friend.lastMessageTimeStamp = openChat.friend.lastMessageTimeStamp
+//                        friend.messagesCount = openChat.friend.messagesCount
+//                    }
+//
+//                }
+                val pubKeyString = byteArrayToString(openChat.friend.userInfo.pubKey)
+                me.friends[pubKeyString]?.lastMessageTimeStamp =
+                    openChat.friend.lastMessageTimeStamp
+                me.friends[pubKeyString]?.messagesCount =
+                    openChat.friend.messagesCount
+
 
                 dataStorage.saveMyData(me)
                 clearChatLoadInfo()
