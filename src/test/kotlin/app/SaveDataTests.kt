@@ -14,13 +14,14 @@ class SaveDataTests {
     fun `account data save test`() {
         val pk1 = Random.nextBytes(32)
         val pk2 = Random.nextBytes(32)
+        val pk3 = Random.nextBytes(32)
         val pr = Random.nextBytes(32)
 
         val lastSeen = System.currentTimeMillis()
         val userInfo = UserInfo(pk1, "KDizzled", lastSeen, false)
 
-        val friendInfo1 = UserInfo(pk1, "Mimimaxik", lastSeen, false)
-        val friendInfo2 = UserInfo(pk2, "SmnTin", lastSeen, false)
+        val friendInfo1 = UserInfo(pk2, "Mimimaxik", lastSeen, false)
+        val friendInfo2 = UserInfo(pk3, "SmnTin", lastSeen, false)
 
         val friend1 = Friend(friendInfo1, true,
             Random.nextLong(0, 100000),
@@ -42,7 +43,7 @@ class SaveDataTests {
         assertEquals(me, dataStorage.loadMyData())
     }
 
-    @RepeatedTest(30)
+    @RepeatedTest(90)
     fun `multiple account data to JSON save test`(testInfo : TestInfo) {
         val dataStorage : UserDataStorage = JSONUserDataStorageImpl(testUserInfoPathJSON)
 
@@ -53,7 +54,7 @@ class SaveDataTests {
         println("Test display name: ${testInfo.displayName}")
     }
 
-    @RepeatedTest(30)
+    @RepeatedTest(90)
     fun `multiple account data to Proto save test`(testInfo : TestInfo) {
         val dataStorage : UserDataStorage = ProtoUserDataStorageImpl(testUserInfoPathProto)
 

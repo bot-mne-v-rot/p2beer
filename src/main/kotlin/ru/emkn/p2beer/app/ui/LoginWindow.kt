@@ -6,7 +6,7 @@ import com.googlecode.lanterna.gui2.dialogs.MessageDialog
 import com.googlecode.lanterna.gui2.dialogs.MessageDialogButton
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory
 import ru.emkn.p2beer.app.client.user.Account
-import ru.emkn.p2beer.app.client.user.JSONUserDataStorageImpl
+import ru.emkn.p2beer.app.client.user.ProtoUserDataStorageImpl
 import ru.emkn.p2beer.app.client.user.UserInfo
 import ru.emkn.p2beer.app.client.util.*
 import java.io.File
@@ -20,7 +20,7 @@ import kotlin.random.Random
 
 fun main(args: Array<String>) {
 
-    if (File(userInfoPathJSON).exists()) {
+    if (File(userInfoPathProto).exists()) {
 
         /**
          * Tries to parse data from JSON file
@@ -133,7 +133,7 @@ fun performLogin() {
                  * Save generated data
                  */
 
-                val dataStorage = JSONUserDataStorageImpl()
+                val dataStorage = ProtoUserDataStorageImpl()
                 dataStorage.saveMyData(me)
 
                 val mainW = MainWindow(me)
@@ -192,6 +192,6 @@ fun performLogin() {
 }
 
 fun tryToParseUserData () : Account {
-    val dataStorage = JSONUserDataStorageImpl()
+    val dataStorage = ProtoUserDataStorageImpl()
     return dataStorage.loadMyData()
 }

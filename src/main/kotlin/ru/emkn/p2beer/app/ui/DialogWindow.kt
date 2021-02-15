@@ -5,7 +5,7 @@ import com.googlecode.lanterna.gui2.*
 import ru.emkn.p2beer.app.client.chat.*
 import ru.emkn.p2beer.app.client.user.Account
 import ru.emkn.p2beer.app.client.user.FriendConnection
-import ru.emkn.p2beer.app.client.user.JSONUserDataStorageImpl
+import ru.emkn.p2beer.app.client.user.ProtoUserDataStorageImpl
 import ru.emkn.p2beer.app.client.user.TempChatStorage
 import ru.emkn.p2beer.app.client.util.*
 import java.io.File
@@ -149,15 +149,8 @@ class DialogWindow(
                  * Update data about Friend's last message
                  */
 
-                val dataStorage = JSONUserDataStorageImpl()
+                val dataStorage = ProtoUserDataStorageImpl()
 
-//                for (friend in me.friends) {
-//                    if (friend.userInfo.pubKey.contentEquals(openChat.friend.userInfo.pubKey)) {
-//                        friend.lastMessageTimeStamp = openChat.friend.lastMessageTimeStamp
-//                        friend.messagesCount = openChat.friend.messagesCount
-//                    }
-//
-//                }
                 val pubKeyString = byteArrayToString(openChat.friend.userInfo.pubKey)
                 me.friends[pubKeyString]?.lastMessageTimeStamp =
                     openChat.friend.lastMessageTimeStamp

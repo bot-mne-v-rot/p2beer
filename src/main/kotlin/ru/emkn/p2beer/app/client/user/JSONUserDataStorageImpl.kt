@@ -3,8 +3,6 @@ package ru.emkn.p2beer.app.client.user
 import com.google.gson.*
 import ru.emkn.p2beer.app.client.util.*
 import java.io.File
-import java.io.RandomAccessFile
-import java.security.PublicKey
 
 //TODO: Create saving to binary
 // file and loading from binary file

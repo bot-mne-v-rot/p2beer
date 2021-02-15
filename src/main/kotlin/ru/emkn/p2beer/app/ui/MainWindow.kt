@@ -168,15 +168,8 @@ class MainWindow(private val me: Account) {
             val tempChatStorage = TempChatStorage()
             tempChatStorage.loadFromFile()
 
-            val jsonStorage = JSONUserDataStorageImpl()
+            val jsonStorage = ProtoUserDataStorageImpl()
             val myData = jsonStorage.loadMyData()
-
-//            for (friend in myData.friends.values) {
-//                if (friend.userInfo.pubKey.contentEquals(tempChatStorage.publicKey)) {
-//                    friend.messagesCount = tempChatStorage.messagesCount
-//                    friend.lastMessageTimeStamp = tempChatStorage.lastMessageTimeStamp
-//                }
-//            }
 
             val pubKeyString = byteArrayToString(tempChatStorage.publicKey)
             myData.friends[pubKeyString]?.lastMessageTimeStamp =
