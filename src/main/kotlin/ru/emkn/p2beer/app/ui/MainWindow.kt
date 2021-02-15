@@ -111,7 +111,7 @@ class MainWindow(private val me: Account) {
 
             val actionListBox = ActionListBox(TerminalSize(20, 10))
             var chat: DialogWindow
-            for (friend in me.friends.sortedWith(FriendComparator)) {
+            for (friend in me.friends.values.sortedWith(FriendComparator)) {
 
                 /**
                  * Get connection to friend via FriendsManager
@@ -171,12 +171,18 @@ class MainWindow(private val me: Account) {
             val jsonStorage = JSONUserDataStorageImpl()
             val myData = jsonStorage.loadMyData()
 
-            for (friend in myData.friends) {
-                if (friend.userInfo.pubKey.contentEquals(tempChatStorage.publicKey)) {
-                    friend.messagesCount = tempChatStorage.messagesCount
-                    friend.lastMessageTimeStamp = tempChatStorage.lastMessageTimeStamp
-                }
-            }
+//            for (friend in myData.friends.values) {
+//                if (friend.userInfo.pubKey.contentEquals(tempChatStorage.publicKey)) {
+//                    friend.messagesCount = tempChatStorage.messagesCount
+//                    friend.lastMessageTimeStamp = tempChatStorage.lastMessageTimeStamp
+//                }
+//            }
+
+            val pubKeyString = byteArrayToString(tempChatStorage.publicKey)
+            myData.friends[pubKeyString]?.lastMessageTimeStamp =
+                tempChatStorage.lastMessageTimeStamp
+            myData.friends[pubKeyString]?.messagesCount =
+                tempChatStorage.messagesCount
 
             jsonStorage.saveMyData(myData)
         }

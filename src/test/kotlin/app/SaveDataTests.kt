@@ -1,69 +1,83 @@
 package app
 
+import chat.getRandomString
+import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInfo
 import ru.emkn.p2beer.app.client.user.*
 import kotlin.random.Random
 import kotlin.test.assertEquals
 import ru.emkn.p2beer.app.client.util.*
 
-class JSONSaveDataTests {
+class SaveDataTests {
     @Test
     fun `account data save test`() {
-        val pk = Random.nextBytes(32)
+        val pk1 = Random.nextBytes(32)
+        val pk2 = Random.nextBytes(32)
         val pr = Random.nextBytes(32)
 
         val lastSeen = System.currentTimeMillis()
-        val userInfo = UserInfo(pk, "KDizzled", lastSeen, false)
+        val userInfo = UserInfo(pk1, "KDizzled", lastSeen, false)
 
-        val friendInfo1 = UserInfo(pk, "Mimimaxik", lastSeen, false)
-        val friendInfo2 = UserInfo(pk, "SmnTin", lastSeen, false)
+        val friendInfo1 = UserInfo(pk1, "Mimimaxik", lastSeen, false)
+        val friendInfo2 = UserInfo(pk2, "SmnTin", lastSeen, false)
 
         val friend1 = Friend(friendInfo1, true,
-                Random.nextLong(0, 100000),
-                Random.nextLong(0, 100000))
+            Random.nextLong(0, 100000),
+            Random.nextLong(0, 100000))
         val friend2 = Friend(friendInfo2, false,
-                Random.nextLong(0, 100000),
-                Random.nextLong(0, 100000))
+            Random.nextLong(0, 100000),
+            Random.nextLong(0, 100000))
 
-        val me = Account(userInfo, pr, mapOf(
+        val me = Account(userInfo, pr, mutableMapOf(
             byteArrayToString(friendInfo1.pubKey) to friend1,
             byteArrayToString(friendInfo2.pubKey) to friend2)
         )
 
-        val dataStorage : UserDataStorage = JSONUserDataStorageImpl()
+        val dataStorage : UserDataStorage = ProtoUserDataStorageImpl(testUserInfoPathProto)
 
         dataStorage.saveMyData(me)
+        println(me)
+        println(dataStorage.loadMyData())
         assertEquals(me, dataStorage.loadMyData())
     }
-}
 
-class ProtoSaveDataTests {
-    @Test
-    fun `account data save test`() {
+    @RepeatedTest(30)
+    fun `multiple account data to JSON save test`(testInfo : TestInfo) {
+        val dataStorage : UserDataStorage = JSONUserDataStorageImpl(testUserInfoPathJSON)
+
+        val me = createAccount()
+        dataStorage.saveMyData(me)
+        assertEquals(me, dataStorage.loadMyData())
+
+        println("Test display name: ${testInfo.displayName}")
+    }
+
+    @RepeatedTest(30)
+    fun `multiple account data to Proto save test`(testInfo : TestInfo) {
+        val dataStorage : UserDataStorage = ProtoUserDataStorageImpl(testUserInfoPathProto)
+
+        val me = createAccount()
+        dataStorage.saveMyData(me)
+        assertEquals(me, dataStorage.loadMyData())
+
+        println("Test display name: ${testInfo.displayName}")
+    }
+
+    private fun createAccount() : Account {
         val pk = Random.nextBytes(32)
         val pr = Random.nextBytes(32)
 
         val lastSeen = System.currentTimeMillis()
-        val userInfo = UserInfo(pk, "KDizzled", lastSeen, false)
+        val userInfo = UserInfo(pk, getRandomString(9), lastSeen, Random.nextBoolean())
 
-        val friendInfo1 = UserInfo(pk, "Mimimaxik", lastSeen, false)
-        val friendInfo2 = UserInfo(pk, "SmnTin", lastSeen, false)
+        val me = Account(userInfo, pr, mutableMapOf())
 
-        val friend1 = Friend(friendInfo1, true,
-            Random.nextLong(0, 100000),
-            Random.nextLong(0, 100000))
-        val friend2 = Friend(friendInfo2, false,
-            Random.nextLong(0, 100000),
-            Random.nextLong(0, 100000))
+        for (i in 0 until Random.nextInt(200)) {
+            val friend = createFriend()
+            me.friends[byteArrayToString(friend.userInfo.pubKey)] = friend
+        }
 
-        val me = Account(userInfo, pr, mapOf(
-            byteArrayToString(friendInfo1.pubKey) to friend1,
-            byteArrayToString(friendInfo2.pubKey) to friend2)
-        )
-
-        val dataStorage : UserDataStorage = ProtoUserDataStorageImpl()
-
-        dataStorage.saveMyData(me)
-        assertEquals(me, dataStorage.loadMyData())
+        return me
     }
 }

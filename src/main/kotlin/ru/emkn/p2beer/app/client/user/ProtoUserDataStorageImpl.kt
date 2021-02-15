@@ -6,14 +6,13 @@ import ru.emkn.p2beer.app.client.util.userInfoPathProto
 import java.io.File
 import java.io.RandomAccessFile
 
-class ProtoUserDataStorageImpl : UserDataStorage {
+class ProtoUserDataStorageImpl(private val path: String = userInfoPathProto) : UserDataStorage {
     override fun saveMyData(me: Account) {
-        val file = RandomAccessFile(File(userInfoPathProto), "rw")
-        file.write(serializeAccount(me))
+        File(path).writeBytes(serializeAccount(me))
     }
 
     override fun loadMyData(): Account {
-        val file = RandomAccessFile(File(userInfoPathProto), "r")
+        val file = RandomAccessFile(File(path), "r")
         val bytes = ByteArray(file.length().toInt())
         file.readFully(bytes)
         return deserializeAccount(bytes)
@@ -24,7 +23,7 @@ class ProtoUserDataStorageImpl : UserDataStorage {
             .newBuilder()
             .setPrivateKey(ByteString.copyFrom(me.privateKey))
             .setUserInfo(serializeUserInfo(me.userInfo))
-            .putAllFriends(me.friends.mapValues { serializeFriend(it.value) })
+            .putAllFriends(me.friends.mapValues { serializeFriend(it.value) }.toMap())
             .build()
             .toByteArray()
 
@@ -36,7 +35,7 @@ class ProtoUserDataStorageImpl : UserDataStorage {
         return Account(
             deserializeUserInfo(proto.userInfo),
             proto.privateKey.toByteArray(),
-            proto.friendsMap.mapValues { deserializeFriend(it.value) }
+            proto.friendsMap.mapValues { deserializeFriend(it.value) }.toMutableMap()
         )
     }
 

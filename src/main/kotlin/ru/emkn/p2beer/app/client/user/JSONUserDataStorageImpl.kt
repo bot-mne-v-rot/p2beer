@@ -9,7 +9,7 @@ import java.security.PublicKey
 //TODO: Create saving to binary
 // file and loading from binary file
 
-class JSONUserDataStorageImpl : UserDataStorage {
+class JSONUserDataStorageImpl(private val path: String = userInfoPathJSON) : UserDataStorage {
     override fun saveMyData(me: Account) {
         val jsonString = Gson().toJson(me)
 
@@ -17,7 +17,7 @@ class JSONUserDataStorageImpl : UserDataStorage {
     }
 
     override fun loadMyData() : Account {
-        val jsonString = File(userInfoPathJSON).readText()
+        val jsonString = File(path).readText()
 
         return Gson().fromJson(jsonString, Account::class.java)
     }
@@ -37,6 +37,6 @@ class JSONUserDataStorageImpl : UserDataStorage {
          * information about them to a JSON file
          */
 
-        File(userInfoPathJSON).writeText(prettyJsonString)
+        File(path).writeText(prettyJsonString)
     }
 }

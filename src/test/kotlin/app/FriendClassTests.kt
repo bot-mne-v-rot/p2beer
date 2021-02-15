@@ -8,7 +8,7 @@ import ru.emkn.p2beer.app.client.user.UserInfo
 import kotlin.random.Random
 import kotlin.test.assertEquals
 
-private fun createFriend() : Friend {
+fun createFriend() : Friend {
     val pk = Random.nextBytes(32)
     val userName = getRandomString(9)
     val time = Random.nextLong(0, 100000)
