@@ -4,7 +4,6 @@ import ru.emkn.p2beer.app.client.chat.Message
 import java.text.SimpleDateFormat
 import java.util.*
 
-
 val simpleDateFormat = SimpleDateFormat("dd MMMM, HH:mm", Locale.ENGLISH)
 
 fun timestampToDate (message: Message) : String = simpleDateFormat.format(Date(message.info.timestamp))
@@ -18,17 +17,21 @@ fun wrapText(textviewWidth : Int, msg: String) : String {
     for (word in arrayNeeded) {
         if ((temp.length + word.length) < textviewWidth) {
             temp += " $word"
-
+            if(word.contains('\n')) {
+                sentence += temp
+                temp = ""
+            }
         } else {
             // add new line character
-            sentence += "$temp\n   "
+            sentence += "$temp\n"
             temp = word
         }
-
     }
 
-    return (sentence.replaceFirst(" ", "")+temp)
+    sentence = (sentence + temp).trimStart()
+    return sentence.replace("\n", "\n    ")
 }
+
 
 fun byteArrayToString(key: ByteArray) : String =  Base64.getEncoder().encodeToString(key)
 

@@ -269,7 +269,7 @@ fun messageToString(message: Message): String {
     //TODO: Optimize textBox to resize messages for proper width
     return ("""
             |${timestampToDate(message)}
-            |   ${wrapText(50, message.text)}
+            |    ${wrapText(50, message.text)}
             |"""
             .trimMargin()
             )
