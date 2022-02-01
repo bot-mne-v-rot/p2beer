@@ -26,7 +26,7 @@ Privacy. Security. Beer.
     * Works only with ```import guru.bravit```
 
 # Usage
-TODO
+Just everywhere.
 
 # Contribution
 We don't need it.
